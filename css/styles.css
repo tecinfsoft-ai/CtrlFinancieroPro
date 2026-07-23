@@ -1,0 +1,121 @@
+:root { 
+    --bg-arena: #F8F6F2; 
+    --text-main: #45423E; 
+    --brand-sand: #D6C7B3; 
+}
+body { 
+    background-color: var(--bg-arena); 
+    color: var(--text-main); 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+}
+.soft-shadow { 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+}
+.rounded-xl-custom { 
+    border-radius: 1.25rem; 
+}
+.hidden-section { 
+    display: none; 
+}
+.balance-highlight { 
+    background: linear-gradient(135deg, #FDFCFB 0%, #F2EFE9 100%); 
+}
+.input-mxn { 
+    font-family: 'Courier New', monospace; 
+    font-weight: 600; 
+    color: #5C5852; 
+}
+.list-container { 
+    max-height: 400px; 
+    overflow-y: auto; 
+    scrollbar-width: thin; 
+    scrollbar-color: #E5DDD3 transparent; 
+}
+
+.nav-btn { 
+    @apply flex-1 flex flex-col items-center justify-center p-2 md:p-4 transition-all duration-300; 
+    padding: 15px; 
+}
+.btn-content { 
+    @apply w-full py-3 md:py-4 bg-white rounded-2xl text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-40 transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3; 
+    display: flex; 
+    text-align: center; 
+    gap: 12px; 
+}
+.nav-active { 
+    background-color: #ffffff !important; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; 
+    border-radius: 54px; 
+    opacity: 1 !important; 
+    color: #1c1917 !important; 
+    transform: translateY(-2px); 
+}
+.btn-export { 
+    @apply text-[10px] bg-white border border-stone-100 px-4 py-2 rounded-full uppercase tracking-tighter hover:bg-stone-50 transition shadow-sm flex items-center gap-2 font-bold; 
+}
+.toolbar-group { 
+    @apply flex items-center gap-2; 
+}
+
+#loading-overlay { 
+    background: rgba(248, 246, 242, 0.85); 
+    backdrop-filter: blur(4px); 
+    display: none; 
+}
+
+/* Efecto hover */
+#nav-salir:hover {
+    background-color: #ffffff !important; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; 
+    border-radius: 54px; 
+    opacity: 1 !important; 
+    color: #1c1917 !important; 
+    transform: translateY(-2px); 
+}
+
+.hidden-section {
+    display: none !important;
+}
+
+/* Animación física para todos los botones principales */
+button[onclick^="guardarRegistro"] {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+}
+
+button[onclick^="guardarRegistro"]:active {
+    transform: scale(0.96); /* Un sutil encogimiento */
+}
+
+/* Estilo para cuando está en modo "cargando" */
+.btn-loading {
+    opacity: 0.7;
+    cursor: wait !important;
+    background-color: var(--brand-sand) !important;
+}
+
+/* Agrega esto a tu CSS */
+.chart-container {
+    position: relative;
+    height: 300px; /* Asegura un alto mínimo */
+    width: 100%;
+}
+
+/* Limpia el texto nativo del input file para que solo se vea el botón */
+input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    border: none;
+    background: #e5e7eb;
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: #374151;
+    cursor: pointer;
+}
+
+input[type="file"] {
+    color: transparent; /* Oculta el texto "Sin archivos seleccionados" del navegador */
+}
+
+#spinner-global:not(.hidden) {
+    display: flex !important;
+}
