@@ -1,0 +1,39 @@
+<section id="sec-analisis">
+    <!-- Cabecera con título y filtros de fecha idénticos a los demás módulos -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-stone-800">Análisis Financiero</h2>
+            <p class="text-xs text-stone-400 uppercase tracking-wider font-semibold">Resumen y métricas del periodo</p>
+        </div>
+
+        <!-- Filtros de fecha estándar -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center bg-white border rounded-xl px-3 py-2 shadow-sm">
+                <span class="text-[10px] font-bold text-stone-400 mr-2 uppercase">Del:</span>
+                <input type="date" id="an-fecha-inicio" onchange="refrescarVistaActual()"
+                    class="text-xs bg-transparent outline-none font-semibold text-stone-700">
+            </div>
+            <div class="flex items-center bg-white border rounded-xl px-3 py-2 shadow-sm">
+                <span class="text-[10px] font-bold text-stone-400 mr-2 uppercase">Al:</span>
+                <input type="date" id="an-fecha-fin" onchange="refrescarVistaActual()"
+                    class="text-xs bg-transparent outline-none font-semibold text-stone-700">
+            </div>
+            <button onclick="generarLibroContable()" class="btn-export">📊 Generar Reporte Financiero</button>
+        </div>
+    </div>
+
+    <!-- resumen-balance-total Contenido de tus métricas, gráficos o utilidad del periodo -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow">
+            <h3 class="text-sm font-bold uppercase text-stone-500 mb-4">Utilidad del Periodo</h3>
+            <p id="resumen-balance-total" class="text-3xl font-extrabold text-stone-800 mmb-4">$0.00</p>
+            <div class="relative h-[300px] flex items-center justify-center">
+                <canvas id="chartResumen"></canvas>
+            </div>
+        </div>
+        <div class="bg-white p-8 rounded-xl-custom soft-shadow">
+            <h3 class="text-lg font-semibold mb-6 italic">Cronología del Periodo</h3>
+            <div id="lista-resumen-periodo" class="space-y-3 list-container"></div>
+        </div>
+    </div>
+</section>

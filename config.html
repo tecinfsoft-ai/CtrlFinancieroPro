@@ -1,0 +1,33 @@
+<section id="sec-config">
+    <div class="max-w-2xl mx-auto space-y-6">
+        <div class="bg-white p-6 md:p-8 rounded-xl-custom soft-shadow">
+            <h2 class="text-xl font-semibold mb-6 italic text-stone-800">Categorías</h2>
+            <div class="flex flex-col md:flex-row gap-2 mb-8">
+                <input type="text" id="nueva-cat-nombre" placeholder="Nombre"
+                    class="flex-1 p-3 rounded-lg bg-gray-50 outline-none text-sm border">
+                <div class="flex gap-2">
+                    <select id="nueva-cat-tipo" class="flex-1 bg-gray-50 p-3 rounded-lg text-xs font-bold border">
+                        <option value="ingreso">Ingreso</option>
+                        <option value="gasto">Gasto</option>
+                    </select>
+                    <button onclick="agregarCategoria(event)"
+                        class="btn-click-effect soft-shadow bg-[var(--brand-sand)] text-stone-900 px-6 py-3 rounded-xl-custom text-xs font-bold uppercase transition-all hover:brightness-110">
+                        +
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-4 border-b pb-2">
+                        Ingresos</h3>
+                    <div id="lista-cats-ingreso" class="space-y-2"></div>
+                </div>
+                <div>
+                    <h3 class="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-4 border-b pb-2">
+                        Gastos</h3>
+                    <div id="lista-cats-gasto" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

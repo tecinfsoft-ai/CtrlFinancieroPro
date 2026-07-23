@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Financiero Pro - Acceso</title>
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-[#F8F6F2] px-6">
+
+    <div id="loading-overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-700 mb-4"></div>
+        <p class="text-xs font-bold uppercase tracking-widest text-stone-500">Conectando con el Sistema...</p>
+    </div>
+
+    <div class="w-full max-w-md bg-white p-8 rounded-xl-custom soft-shadow border border-stone-200">
+
+        <form id="login-form" onsubmit="event.preventDefault(); AuthModule.ejecutarLogin();">
+            <div class="text-center mb-8">
+                <div class="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center shadow-md mx-auto mb-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-light italic text-stone-800">Control <span
+                        class="font-bold not-italic">Financiero</span></h2>
+                <p class="text-xs text-stone-400 mt-1 uppercase tracking-wider font-bold">Acceso al Sistema</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label
+                        class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">Usuario</label>
+                    <input type="text" id="login-user" autocomplete="username" placeholder="Usuario"
+                        class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border border-transparent focus:border-stone-200">
+                </div>
+                <div>
+                    <label
+                        class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">Contraseña</label>
+                    <div class="password-container" style="position: relative; width: 100%;">
+                        <input type="password" id="login-pass" autocomplete="current-password" placeholder="Contraseña"
+                            class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border border-transparent focus:border-stone-200"
+                            style="padding-right: 45px;">
+
+                        <button type="button" id="btn-toggle-pass"
+                            style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #6b7280; padding: 0; display: flex; align-items: center; z-index: 10;">
+
+                            <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+
+                            <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
+                                style="display: none; pointer-events: none;">
+                                <path
+                                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                                </path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <p id="login-error" class="text-rose-500 text-xs font-semibold hidden text-center"></p>
+
+                <button type="submit"
+                    class="w-full bg-stone-800 text-white py-4 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-stone-700 transition-colors">
+                    Ingresar
+                </button>
+            </div>
+        </form>
+    </div>
+
+<script src="js/ui.js" defer></script>   <script src="js/api.js" defer></script>  <script src="js/app.js" defer></script>   <script src="js/login.js" defer></script>
+</body>
+
+</html>

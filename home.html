@@ -1,0 +1,31 @@
+<section id="sec-home">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+        <div class="balance-highlight p-6 rounded-xl-custom soft-shadow border border-[#E5DDD3]">
+            <span class="text-[10px] uppercase tracking-wider opacity-60 font-bold">Patrimonio Total</span>
+            <h2 id="balance-general" class="text-2xl font-bold mt-1 text-[#8C7E6A]">$0.00</h2>
+        </div>
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow"><span
+                class="text-[10px] uppercase tracking-wider opacity-60 font-bold italic">Hoy</span>
+            <h2 id="balance-dia" class="text-2xl font-bold mt-1 text-stone-600">$0.00</h2>
+        </div>
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow"><span
+                class="text-[10px] uppercase tracking-wider opacity-60 font-bold">Ingresos Mes</span>
+            <h2 id="home-ingresos" class="text-2xl font-bold mt-1 text-stone-500">$0.00</h2>
+        </div>
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow"><span
+                class="text-[10px] uppercase tracking-wider opacity-60 text-rose-300 font-bold">Gastos
+                Mes</span>
+            <h2 id="home-gastos" class="text-2xl font-bold mt-1">$0.00</h2>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white p-8 rounded-xl-custom soft-shadow text-center">
+            <h3 class="text-lg font-semibold mb-6 italic">Distribución Mensual</h3>
+            <div class="max-w-[250px] mx-auto"><canvas id="chartHome"></canvas></div>
+        </div>
+        <div class="bg-white p-8 rounded-xl-custom soft-shadow">
+            <h3 class="text-lg font-semibold mb-6 italic">Últimos 10 Movimientos</h3>
+            <div id="lista-recientes" class="space-y-3 list-container"></div>
+        </div>
+    </div>
+</section>
