@@ -421,8 +421,21 @@ function fMXN(monto) {
 
 window.formatearFechaMX = function (fechaString) {
     if (!fechaString) return "";
-    const fecha = new Date(fechaString.includes('T') ? fechaString : `${fechaString}T00:00:00`);
-    return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    // Si por alguna razón viene con hora o formato largo de Google Sheets, lo limpiamos
+    const fechaLimpia = String(fechaString).split('T')[0];
+    
+    // Si viene en formato YYYY-MM-DD
+    if (fechaLimpia.includes('-')) {
+        const partes = fechaLimpia.split('-');
+        if (partes.length === 3) {
+            // Retorna directamente DD/MM/YYYY usando los valores exactos del texto
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    }
+    
+    // Si ya viene en otro formato o texto plano, lo devolvemos tal cual
+    return fechaString;
 };
 
 window.guardarFiltrosHome = function() {
