@@ -302,6 +302,7 @@ async function actualizarCategoriaEnNube(id, nuevoNombre) {
         console.error("❌ Error de red al intentar actualizar en Google Sheets:", error);
     }
 }
+
 // Variables globales seguras para los gráficos
 window.chartH = window.chartH || null;
 window.chartR = window.chartR || null;
