@@ -35,6 +35,8 @@ async function FetchAPI(action, extraData = {}) {
     }
 }
 
+// Agregamos 'actualizarUI = true' por defecto. 
+// Como por defecto es true, todas tus llamadas actuales seguirán funcionando IGUAL.
 async function inicializarSincronizacion() {
     const state = window.AppState;
     const loader = document.getElementById('loader');
@@ -52,28 +54,11 @@ async function inicializarSincronizacion() {
     }
 
     // 2. Sincronización (Red) - SIN BLOQUEAR
+    // No usamos 'await' aquí para que el resto de la app siga funcionando
     fetch(API_URL)
         .then(response => response.json())
         .then(data => {
             if (data && data.movimientos) {
-                
-                // 🔥 LIMPIEZA AUTOMÁTICA DE FECHAS AL RECIBIRLAS DE LA RED
-                data.movimientos.forEach(m => {
-                    if (m.fecha) {
-                        let fechaStr = String(m.fecha).trim();
-                        if (fechaStr.includes('GMT') || fechaStr.includes('May') || fechaStr.includes('Sun') || fechaStr.length > 15) {
-                            let d = new Date(fechaStr);
-                            if (!isNaN(d)) {
-                                let yyyy = d.getUTCFullYear();
-                                let mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-                                let dd = String(d.getUTCDate()).padStart(2, '0');
-                                m.fecha = `${yyyy}-${mm}-${dd}`;
-                            }
-                        }
-                    }
-                });
-                // ⬆️ FIN DE LA LIMPIEZA ⬆️
-
                 state.movimientos = data.movimientos;
                 state.categorias = data.categorias;
                 state.cargado = true;
