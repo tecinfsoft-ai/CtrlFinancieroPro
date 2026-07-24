@@ -35,12 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. DEFINICIÓN DE TIEMPO
     const ahora = new Date();
-    const añoActual = ahora.getFullYear();
-    const mesActual = ahora.getMonth(); // 0 a 11
-    
-    const pad = (n) => String(n).padStart(2, '0');
-    const hoyStr = `${añoActual}-${pad(mesActual + 1)}-${pad(ahora.getDate())}`;
-    const primerDiaMesStr = `${añoActual}-${pad(mesActual + 1)}-01`;
+    const hoyStr = ahora.toISOString().split('T')[0];
 
     // 2. ASEGURAR QUE EL ESTADO GLOBAL EXISTA
     window.AppState = window.AppState || {};
