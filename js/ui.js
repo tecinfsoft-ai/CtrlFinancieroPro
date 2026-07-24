@@ -1,5 +1,4 @@
 // --- RENDERIZADOS LOCALES ---
-// --- RENDERIZADOS LOCALES ---
 function actualizarListadoIndividual(tipo, contId, countId) {
     // 🛡️ Extractor seguro: asegura que siempre obtengamos un arreglo plano sin importar cómo venga el estado
     let rawMovs = AppState.movimientos || [];
@@ -98,6 +97,7 @@ function actualizarListadoIndividual(tipo, contId, countId) {
 
     cont.innerHTML = htmlAcumulado;
 }
+
 function actualizarSelectsCategorias() {
     const inSel = document.getElementById('in-categoria');
     const exSel = document.getElementById('ex-categoria');
