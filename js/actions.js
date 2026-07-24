@@ -520,21 +520,7 @@ function obtenerMovimientosFiltrados() {
 
     return listaMovs.filter(m => {
         if (!m.fecha) return false;
-
-        let fechaCruda = String(m.fecha).trim();
-
-        // 🔥 Limpiador al vuelo si el servidor mandó el texto largo en inglés de Google
-        if (fechaCruda.includes('GMT') || fechaCruda.includes('May') || fechaCruda.includes('Sun') || fechaCruda.length > 15) {
-            let d = new Date(fechaCruda);
-            if (!isNaN(d)) {
-                let yyyy = d.getUTCFullYear();
-                let mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-                let dd = String(d.getUTCDate()).padStart(2, '0');
-                fechaCruda = `${yyyy}-${mm}-${dd}`;
-            }
-        }
-
-        const fechaStr = fechaCruda.split('T')[0];
+        const fechaStr = String(m.fecha).split('T')[0];
         const partes = fechaStr.split('-');
         if (partes.length < 3) return false;
 
