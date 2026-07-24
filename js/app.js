@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 👤 OBTENER EL USUARIO ACTUAL (ej. 'kiara', 'soporte', etc.) para aislar su información
-    const usuarioActual = (localStorage.getItem('usuarioLogueado') || 'default').toLowerCase();
+// Forzar a leer el usuario real de la cookie/storage que sí existe en este proyecto:
+const usuarioActual = (localStorage.getItem('usuarioLogueado') || localStorage.getItem('session_userName') || 'soporte').toLowerCase();
 
     // --- 🕵️‍♂️ 2. LUEGO SE PONE EL BLOQUE DE DEPURACIÓN AQUÍ ---
     console.log("--- INICIO DE DEPURACIÓN DE DATOS ---");
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     console.log("---------------------------------------");
     // ----------------------------------------------------
-    
+
     // 1. DEFINICIÓN DE TIEMPO
     const ahora = new Date();
     const hoyStr = ahora.toISOString().split('T')[0];
