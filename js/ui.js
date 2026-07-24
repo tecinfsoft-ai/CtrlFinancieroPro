@@ -69,9 +69,16 @@ function actualizarListadoIndividual(tipo, contId, countId) {
 
     let htmlAcumulado = '';
     filtrados.forEach(m => {
-        const fechaLegible = (typeof window.formatearFechaMX === 'function')
-            ? window.formatearFechaMX(m.fecha)
-            : String(m.fecha).split('T')[0];
+        // 🔥 Corrección para que la fecha visual coincida exactamente sin restar días por UTC
+        let fechaLegible = m.fecha;
+        if (fechaLegible) {
+            let partes = String(fechaLegible).split('T')[0].split('-');
+            if (partes.length === 3) {
+                fechaLegible = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            } else if (typeof window.formatearFechaMX === 'function') {
+                fechaLegible = window.formatearFechaMX(m.fecha);
+            }
+        }
 
         htmlAcumulado += `
             <div class="p-4 bg-gray-50/50 rounded-xl border border-white flex justify-between items-center group transition-all hover:bg-white hover:shadow-sm mb-2">
