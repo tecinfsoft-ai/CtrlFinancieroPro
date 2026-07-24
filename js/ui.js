@@ -13,11 +13,12 @@ function actualizarListadoIndividual(tipo, contId, countId) {
     const inputInicio = document.getElementById(`${pref}-fecha-inicio`);
     const inputFin = document.getElementById(`${pref}-fecha-fin`);
 
-    // Valores por defecto (mes actual)
+    // Valores por defecto locales (mes actual sin desfase UTC)
     const hoy = new Date();
     const añoActual = hoy.getFullYear();
-    const mesActual = String(hoy.getMonth() + 1).padStart(2, '0');
-    const diaActual = String(hoy.getDate()).padStart(2, '0');
+    const pad = (n) => String(n).padStart(2, '0');
+    const mesActual = pad(hoy.getMonth() + 1);
+    const diaActual = pad(hoy.getDate());
 
     const defectoInicio = `${añoActual}-${mesActual}-01`;
     const defectoFin = `${añoActual}-${mesActual}-${diaActual}`;
@@ -28,22 +29,26 @@ function actualizarListadoIndividual(tipo, contId, countId) {
     const fechaInicioStr = inputInicio ? inputInicio.value : defectoInicio;
     const fechaFinStr = inputFin ? inputFin.value : defectoFin;
 
-    // Convertimos los límites del filtro a milisegundos para comparar matemáticamente (más seguro que strings)
-    const inicioTime = new Date(fechaInicioStr + 'T00:00:00').getTime();
-    const finTime = new Date(fechaFinStr + 'T23:59:59').getTime();
-
-    // Filtramos validando tipo y rango de tiempo exacto
+    // 🔥 FILTRADO POR CADENA DE TEXTO (Inmune a zonas horarias y UTC)
     const filtrados = todosLosMovimientos.filter(m => {
         if (!m.fecha) return false;
 
         const tipoMov = (m.tipo || '').toLowerCase().trim();
         if (tipoMov !== tipoNormalizado) return false;
 
-        // Convertimos la fecha del movimiento a timestamp
-        const movTime = new Date(m.fecha).getTime();
-        if (isNaN(movTime)) return false;
+        // Extraer y normalizar la fecha del movimiento a formato 'YYYY-MM-DD' puro
+        let fechaMovStr = String(m.fecha);
+        if (fechaMovStr.includes('T')) {
+            fechaMovStr = fechaMovStr.split('T')[0];
+        } else if (fechaMovStr.length > 10) {
+            const d = new Date(m.fecha);
+            if (!isNaN(d.getTime())) {
+                fechaMovStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            }
+        }
 
-        return movTime >= inicioTime && movTime <= finTime;
+        // Comparación alfabética directa exacta (funciona perfecto con YYYY-MM-DD)
+        return fechaMovStr >= fechaInicioStr && fechaMovStr <= fechaFinStr;
     }).reverse();
 
     // Actualizamos el contador
