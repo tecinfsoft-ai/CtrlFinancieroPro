@@ -421,10 +421,18 @@ function fMXN(monto) {
 
 window.formatearFechaMX = function (fechaString) {
     if (!fechaString) return "";
-    const fecha = new Date(fechaString.includes('T') ? fechaString : `${fechaString}T00:00:00`);
-    return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    // Limpiamos y tomamos solo la parte de la fecha (YYYY-MM-DD)
+    const soloFecha = String(fechaString).split('T')[0];
+    const partes = soloFecha.split('-');
+    
+    if (partes.length === 3) {
+        // Retorna directamente DD/MM/YYYY usando los valores exactos del texto, sin tocar horas ni UTC
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    
+    return fechaString;
 };
-
 window.guardarFiltrosHome = function() {
     const mes = document.getElementById('ex-mes')?.value;
     const anio = document.getElementById('ex-año')?.value;
