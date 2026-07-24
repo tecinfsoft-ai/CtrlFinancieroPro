@@ -62,11 +62,25 @@ function actualizarListadoIndividual(tipo, contId, countId) {
         return;
     }
 
-    let htmlAcumulado = '';
+let htmlAcumulado = '';
     filtrados.forEach(m => {
-        const fechaLegible = (typeof window.formatearFechaMX === 'function')
-            ? window.formatearFechaMX(m.fecha)
-            : String(m.fecha).split('T')[0];
+        // 🔥 Blindaje total: Busca cualquier formato de fecha y extrae los números exactos
+        let fechaLegible = "Sin fecha";
+        const fechaCruda = String(m.fecha || '');
+        
+        // Si detecta un formato con guiones (ej. 2026-06-01 o con T...)
+        if (fechaCruda.includes('-')) {
+            const soloFecha = fechaCruda.split('T')[0];
+            const partes = soloFecha.split('-');
+            if (partes.length === 3) {
+                fechaLegible = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+        } else {
+            // Si por alguna razón la API o Apps Script ya la alteró, intentamos rescatar el texto o usamos formatearFechaMX original
+            fechaLegible = (typeof window.formatearFechaMX === 'function') 
+                ? window.formatearFechaMX(m.fecha) 
+                : fechaCruda;
+        }
 
         htmlAcumulado += `
             <div class="p-4 bg-gray-50/50 rounded-xl border border-white flex justify-between items-center group transition-all hover:bg-white hover:shadow-sm mb-2">
