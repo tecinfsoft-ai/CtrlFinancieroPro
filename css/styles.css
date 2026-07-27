@@ -100,3 +100,22 @@ button[onclick^="guardarRegistro"]:active {
     height: 300px; /* Asegura un alto mínimo */
     width: 100%;
 }
+
+/* Limpia el texto nativo del input file para que solo se vea el botón */
+input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    border: none;
+    background: #e5e7eb;
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: #374151;
+    cursor: pointer;
+}
+
+input[type="file"] {
+    color: transparent; /* Oculta el texto "Sin archivos seleccionados" del navegador */
+}
+
+#spinner-global:not(.hidden) {
+    display: flex !important;
+}
