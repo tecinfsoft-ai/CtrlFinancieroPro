@@ -414,21 +414,31 @@ function fMXN(monto) {
     return valor.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 }
 
-window.formatearFechaMX = function (fechaString) {
-    if (!fechaString) return "";
-    // Limpiamos la cadena para quedarnos solo con la parte de la fecha (YYYY-MM-DD)
-    const partes = fechaString.split('T')[0].split('-');
-    if (partes.length === 3) {
-        // Creamos la fecha usando UTC para que el huso horario no la mueva de día
-        const fecha = new Date(Date.UTC(partes[0], partes[1] - 1, partes[2]));
-        return fecha.toLocaleDateString('es-MX', { 
-            timeZone: 'UTC', 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-        });
+window.formatearFechaMX = function (fechaInput) {
+    if (!fechaInput) return "";
+
+    let fechaObj;
+
+    // Si ya es un objeto Date o una cadena convertible
+    if (fechaInput instanceof Date) {
+        fechaObj = fechaInput;
+    } else {
+        // Intentar parsear cualquier formato de fecha que reciba
+        fechaObj = new Date(fechaInput);
     }
-    return fechaString;
+
+    // Si la fecha no es válida, devolvemos el texto original tal cual
+    if (isNaN(fechaObj.getTime())) {
+        return fechaInput;
+    }
+
+    // Extraemos año, mes y día usando métodos UTC para neutralizar el desfase GMT-0700
+    const anio = fechaObj.getUTCFullYear();
+    const mes = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+    const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
+
+    // Retornamos el formato exacto DD/MM/YYYY
+    return `${dia}/${mes}/${anio}`;
 };
 
 window.guardarFiltrosHome = function () {
