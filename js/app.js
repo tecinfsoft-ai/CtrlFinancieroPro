@@ -31,14 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 👤 OBTENER EL USUARIO ACTUAL (ej. 'kiara', 'soporte', etc.) para aislar su información
-// Forzar a leer el usuario real de la cookie/storage que sí existe en este proyecto:
-const usuarioActual = (localStorage.getItem('usuarioLogueado') || localStorage.getItem('session_userName') || 'soporte').toLowerCase();
-
+    // Forzar a leer el usuario real de la cookie/storage que sí existe en este proyecto:
+    const usuarioActual = (localStorage.getItem('session_user') || localStorage.getItem('session_userName') || localStorage.getItem('usuarioLogueado') || 'default').toLowerCase();
+  
     // --- 🕵️‍♂️ 2. LUEGO SE PONE EL BLOQUE DE DEPURACIÓN AQUÍ ---
     console.log("--- INICIO DE DEPURACIÓN DE DATOS ---");
     console.log("1. Usuario actual detectado:", usuarioActual);
     console.log("2. Clave exacta que se buscará en localStorage:", `financiero_state_${usuarioActual}`);
-    
+
     const rawData = localStorage.getItem(`financiero_state_${usuarioActual}`);
     console.log("3. ¿Encontró datos con sufijo de usuario?:", rawData ? "SÍ" : "NO");
 
@@ -450,7 +450,7 @@ window.formatearFechaMX = function (fechaString) {
     return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-window.guardarFiltrosHome = function() {
+window.guardarFiltrosHome = function () {
     const mes = document.getElementById('ex-mes')?.value;
     const anio = document.getElementById('ex-año')?.value;
 
@@ -458,21 +458,21 @@ window.guardarFiltrosHome = function() {
     if (anio !== undefined) sessionStorage.setItem('filtro_home_anio', anio);
 };
 
-window.guardarFiltrosIngresos = function() {
+window.guardarFiltrosIngresos = function () {
     const inicio = document.getElementById('in-fecha-inicio')?.value;
     const fin = document.getElementById('in-fecha-fin')?.value;
     if (inicio) sessionStorage.setItem('filtro_ingresos_inicio', inicio);
     if (fin) sessionStorage.setItem('filtro_ingresos_fin', fin);
 };
 
-window.guardarFiltrosGastos = function() {
+window.guardarFiltrosGastos = function () {
     const inicio = document.getElementById('ex-fecha-inicio')?.value;
     const fin = document.getElementById('ex-fecha-fin')?.value;
     if (inicio) sessionStorage.setItem('filtro_gastos_inicio', inicio);
     if (fin) sessionStorage.setItem('filtro_gastos_fin', fin);
 };
 
-window.guardarFiltrosAnalisis = function() {
+window.guardarFiltrosAnalisis = function () {
     const inicio = document.getElementById('an-fecha-inicio')?.value;
     const fin = document.getElementById('an-fecha-fin')?.value;
     if (inicio) sessionStorage.setItem('filtro_analisis_inicio', inicio);
