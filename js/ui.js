@@ -265,7 +265,7 @@ async function saveEdit(id) {
 
 async function actualizarCategoriaEnNube(id, nuevoNombre) {
     // Reemplaza esta URL con la URL de implementación web de tu Google Apps Script
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx87PyaYtEDgPqomoCuBCd59yUIXW04Sl5JioZ1hxpJAXfOwiWTbuIajMXGfEEMKbRDUg/exec";
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbw7BCRmlIEhrRb_xkj57BlDi-JvAxHU94PQe8FykPsSv0LcFM9yOQpSBAxZ0Xg2hKMI/exec";
 
     try {
         const respuesta = await fetch(URL_APPS_SCRIPT, {
