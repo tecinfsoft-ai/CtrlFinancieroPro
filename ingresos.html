@@ -3,12 +3,12 @@
         <!-- 📅 RANGO DE FECHAS (Inicia del 1ro al día actual del sistema, modificable por el usuario) -->
         <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border">
             <span class="text-[10px] font-bold opacity-50 uppercase">Del:</span>
-            <input type="date" id="in-fecha-inicio" onchange="refrescarVistaActual()"
+            <input type="date" id="in-fecha-inicio" onchange="guardarFiltrosIngresos(); refrescarVistaActual();"
                 class="bg-transparent text-[10px] font-bold outline-none cursor-pointer">
         </div>
         <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border">
             <span class="text-[10px] font-bold opacity-50 uppercase">Al:</span>
-            <input type="date" id="in-fecha-fin" onchange="refrescarVistaActual()"
+            <input type="date" id="in-fecha-fin" onchange="guardarFiltrosIngresos(); refrescarVistaActual();"
                 class="bg-transparent text-[10px] font-bold outline-none cursor-pointer">
         </div>
 
@@ -27,9 +27,44 @@
                     placeholder="$ 0.00 MXN"
                     class="w-full p-4 rounded-xl bg-gray-50 outline-none text-lg input-mxn border">
                 <input type="hidden" id="in-monto-hidden" value="0">
-                <button onclick="guardarRegistro('ingreso')"
-                    class="w-full bg-[#D6C7B3] text-white py-4 rounded-xl font-bold uppercase text-xs tracking-widest transition-all">Guardar
-                    Registro</button>
+                <div class="col-span-2 border-t border-stone-200 pt-4 mt-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-3">
+                        Comprobantes y/o Facturación
+                    </label>
+                    <!-- CAMPO TICKET -->
+                    <div class="mb-3">
+                        <label class="form-label">Ticket 🎫</label>
+                        <div style="margin-bottom: 3px; font-size: 0.9rem;">
+                            <span style="color: #6b7280; font-style: italic;" id="textoTicketActual">No hay
+                                archivo</span>
+                        </div>
+                        <input type="file" id="file-ticket" class="form-control"
+                            style="padding: 6px; font-size: 0.85rem;">
+                    </div>
+
+                    <!-- CAMPO FACTURA PDF -->
+                    <div class="mb-3">
+                        <label class="form-label">Factura PDF 📄</label>
+                        <div style="margin-bottom: 3px; font-size: 0.9rem;">
+                            <span style="color: #6b7280; font-style: italic;" id="textoPdfActual">No hay archivo</span>
+                        </div>
+                        <input type="file" id="file-pdf" class="form-control" style="padding: 6px; font-size: 0.85rem;">
+                    </div>
+
+                    <!-- CAMPO FACTURA XML -->
+                    <div class="mb-3">
+                        <label class="form-label">Factura XML 📦</label>
+                        <div style="margin-bottom: 3px; font-size: 0.9rem;">
+                            <span style="color: #6b7280; font-style: italic;" id="textoXmlActual">No hay archivo</span>
+                        </div>
+                        <input type="file" id="file-xml" class="form-control" style="padding: 6px; font-size: 0.85rem;">
+                    </div>
+                </div>
+                <div class="col-span-2 border-t border-stone-200 pt-4 mt-2">
+                    <button onclick="guardarRegistro('ingreso')"
+                        class="w-full bg-[#D6C7B3] text-white py-4 rounded-xl font-bold uppercase text-xs tracking-widest transition-all">Guardar
+                        Registro</button>
+                </div>
             </div>
         </div>
         <div class="bg-white p-8 rounded-xl-custom soft-shadow">
