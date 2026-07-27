@@ -373,30 +373,38 @@ window.obtenerMovimientosFiltrados = function () {
     const { inicio, fin } = window.AppState?.filtrosActuales || {};
 
     if (inicio && fin) {
-        const inicioTime = new Date(inicio + 'T00:00:00').getTime();
-        const finTime = new Date(fin + 'T23:59:59').getTime();
+        // Normalizamos los límites del filtro a texto plano "YYYY-MM-DD"
+        const inicioStr = inicio.split('T')[0];
+        const finStr = fin.split('T')[0];
 
         return movimientos.filter(m => {
             if (!m.fecha) return false;
 
-            let movTime = NaN;
+            let fechaMovStr = '';
             let fechaStr = String(m.fecha).trim();
 
             if (fechaStr.includes('-')) {
-                const soloFecha = fechaStr.split('T')[0];
-                movTime = new Date(soloFecha + 'T00:00:00').getTime();
+                fechaMovStr = fechaStr.split('T')[0];
             } else if (fechaStr.includes('/')) {
                 const partes = fechaStr.split('/');
                 if (partes.length === 3) {
-                    movTime = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`).getTime();
+                    fechaMovStr = `${partes[2]}-${partes[1]}-${partes[0]}`;
                 }
             } else {
-                movTime = new Date(m.fecha).getTime();
+                // Si es un formato de fecha complejo de JS, extraemos sus componentes UTC
+                const d = new Date(m.fecha);
+                if (!isNaN(d.getTime())) {
+                    const y = d.getUTCFullYear();
+                    const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+                    const da = String(d.getUTCDate()).padStart(2, '0');
+                    fechaMovStr = `${y}-${mo}-${da}`;
+                }
             }
 
-            if (isNaN(movTime)) return false;
+            if (!fechaMovStr) return false;
 
-            return movTime >= inicioTime && movTime <= finTime;
+            // Comparación estricta de cadenas de texto YYYY-MM-DD (Evita completamente el desfase horario)
+            return fechaMovStr >= inicioStr && fechaMovStr <= finStr;
         });
     }
 
