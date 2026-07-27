@@ -373,7 +373,6 @@ window.obtenerMovimientosFiltrados = function () {
     const { inicio, fin } = window.AppState?.filtrosActuales || {};
 
     if (inicio && fin) {
-        // Normalizamos los límites del filtro a texto plano "YYYY-MM-DD"
         const inicioStr = inicio.split('T')[0];
         const finStr = fin.split('T')[0];
 
@@ -383,27 +382,33 @@ window.obtenerMovimientosFiltrados = function () {
             let fechaMovStr = '';
             let fechaStr = String(m.fecha).trim();
 
-            if (fechaStr.includes('-')) {
-                fechaMovStr = fechaStr.split('T')[0];
-            } else if (fechaStr.includes('/')) {
-                const partes = fechaStr.split('/');
-                if (partes.length === 3) {
-                    fechaMovStr = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                }
-            } else {
-                // Si es un formato de fecha complejo de JS, extraemos sus componentes UTC
-                const d = new Date(m.fecha);
+            // Si el texto contiene las letras de los días de la semana de JS (Sun, Mon, etc.)
+            if (fechaStr.includes('GMT') || fechaStr.includes('UTC') || isNaN(Date.parse(fechaStr) === false)) {
+                const d = new Date(fechaStr);
                 if (!isNaN(d.getTime())) {
+                    // Extraemos los valores UTC para recuperar el día real antes del desfase de las 17:00 hrs
                     const y = d.getUTCFullYear();
                     const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
                     const da = String(d.getUTCDate()).padStart(2, '0');
                     fechaMovStr = `${y}-${mo}-${da}`;
                 }
             }
+            
+            // Si viene en formato plano YYYY-MM-DD
+            if (!fechaMovStr && fechaStr.includes('-')) {
+                fechaMovStr = fechaStr.split('T')[0];
+            } 
+            // Si viene en formato DD/MM/YYYY
+            else if (!fechaMovStr && fechaStr.includes('/')) {
+                const partes = fechaStr.split('/');
+                if (partes.length === 3) {
+                    fechaMovStr = `${partes[2]}-${partes[1]}-${partes[0]}`;
+                }
+            }
 
             if (!fechaMovStr) return false;
 
-            // Comparación estricta de cadenas de texto YYYY-MM-DD (Evita completamente el desfase horario)
+            // Comparación estricta de cadenas YYYY-MM-DD
             return fechaMovStr >= inicioStr && fechaMovStr <= finStr;
         });
     }
