@@ -3,7 +3,6 @@
 // ========================================================
 var AuthModule = {
 
-    // Función para ver/ocultar la contraseña
     togglePasswordVisibility: function () {
         var passInput = document.getElementById('login-pass');
         var eyeOpen = document.getElementById('eye-open');
@@ -13,67 +12,85 @@ var AuthModule = {
 
         if (passInput.type === 'password') {
             passInput.type = 'text';
-            eyeOpen.style.display = 'none';
-            eyeClosed.style.display = 'block';
+            if (eyeOpen) eyeOpen.style.display = 'none';
+            if (eyeClosed) eyeClosed.style.display = 'block';
         } else {
             passInput.type = 'password';
-            eyeOpen.style.display = 'block';
-            eyeClosed.style.display = 'none';
+            if (eyeOpen) eyeOpen.style.display = 'block';
+            if (eyeClosed) eyeClosed.style.display = 'none';
         }
     },
 
-    // Función para procesar el inicio de sesión
-    ejecutarLogin: async function (event) {
-        if (event) event.preventDefault();
+    ejecutarLogin: async function () {
+        if (window._loginEnProceso) return;
+        window._loginEnProceso = true;
 
         var usuario = document.getElementById('login-user').value;
         var password = document.getElementById('login-pass').value;
 
         if (!usuario || !password) {
             alert("Por favor llena todos los campos.");
+            window._loginEnProceso = false;
             return;
         }
+
+        // 1. Activamos el spinner EXCLUSIVAMENTE al presionar ingresar en el login
+        if (typeof toggleLoading === 'function') {
+            toggleLoading(true);
+        }
+
+        // 2. Damos un respiro explícito de 50ms para obligar al navegador a renderizar el overlay
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         try {
             var res = await FetchAPI("login", { user: usuario, pass: password });
 
             if (res && res.success) {
-                // Guardamos la sesión
                 localStorage.setItem('session_user', res.usuario || res.user);
                 localStorage.setItem('session_userName', res.userName || "Usuario");
                 localStorage.setItem('isLoggedIn', 'true');
-
-                // 🔥 AQUÍ SE CUMPLE TU REGLA AL 100%:
-                // Forzamos que la sección inicial sea 'home' obligatoriamente tras iniciar sesión
                 localStorage.setItem('ultima_seccion', 'home');
 
-                // ¡DESBLOQUEAMOS LA REDIRECCIÓN!
-                window.location.href = "./index.html";
-            } else {
-                var msg = res && res.message ? res.message : "Usuario o contraseña incorrectos.";
-                var errorLabel = document.getElementById('error-label');
-
-                if (errorLabel) {
-                    errorLabel.innerText = msg;
-                    errorLabel.classList.remove('hidden');
-                } else {
-                    alert(msg);
+                // 📥 Descargamos los datos iniciales una sola vez antes de saltar al home
+                if (typeof inicializarSincronizacion === 'function') {
+                    await inicializarSincronizacion();
                 }
+
+                // Mantenemos el spinner visible un momento antes de cambiar de página
+                setTimeout(() => {
+                    window.location.href = "./index.html";
+                }, 600);
+            } else {
+                if (typeof toggleLoading === 'function') {
+                    toggleLoading(false);
+                }
+                var msg = res && res.message ? res.message : "Usuario o contraseña incorrectos.";
+                alert(msg);
+                window._loginEnProceso = false;
             }
         } catch (err) {
-            console.error("Error en la petición de login:", err);
-            alert("Hubo un problema al conectar con el servidor.");
+            if (typeof toggleLoading === 'function') {
+                toggleLoading(false);
+            }
+            console.error("Error atrapado en el login:", err);
+            alert("Error al conectar con el servidor. Revisa la consola.");
+            window._loginEnProceso = false;
         }
     }
 };
 
-// Lo registramos en la ventana global
 window.AuthModule = AuthModule;
 
-// 2. Y al final colocas el escuchador
-document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('btn-toggle-pass');
-    if (btn) {
-        btn.addEventListener('click', AuthModule.togglePasswordVisibility);
+// Limpieza de carga al iniciar la pantalla de acceso
+document.addEventListener("DOMContentLoaded", () => {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 300);
+    }
+
+    var btnToggle = document.getElementById('btn-toggle-pass');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', AuthModule.togglePasswordVisibility);
     }
 });
