@@ -1,6 +1,5 @@
 // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
-const API_URL = "https://script.google.com/macros/s/AKfycbw7BCRmlIEhrRb_xkj57BlDi-JvAxHU94PQe8FykPsSv0LcFM9yOQpSBAxZ0Xg2hKMI/exec";
-
+const API_URL = "https://script.google.com/macros/s/AKfycbx87PyaYtEDgPqomoCuBCd59yUIXW04Sl5JioZ1hxpJAXfOwiWTbuIajMXGfEEMKbRDUg/exec";
 let editandoId = null;
 let chartH, chartR;
 
@@ -19,19 +18,20 @@ window.AppState = {
 
 // --- 1. INICIALIZACIÓN (Punto de entrada único) ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // 🛡️ CONTROL DE SESIÓN SEGURO
+    // 🛡️ CONTROL DE SESIÓN SEGURO: Si estamos en el login, no validamos sesión para evitar bucles
     if (window.location.pathname.includes('login.html')) {
         return;
     }
 
+    // 0. VALIDACIÓN DE SEGURIDAD (Control de Sesión para index.html)
     const sesionActiva = localStorage.getItem('usuarioLogueado') || localStorage.getItem('isLoggedIn');
     if (!sesionActiva) {
         window.location.replace("login.html");
         return;
     }
 
-    // 👤 USUARIO ACTUAL SOLO PARA FILTROS Y PREFERENCIAS DE SESIÓN
-    const usuarioActual = (localStorage.getItem('session_user') || localStorage.getItem('session_userName') || 'soporte').toLowerCase();
+    // 👤 OBTENER EL USUARIO ACTUAL (ej. 'kiara', 'soporte', etc.) para aislar su información
+    const usuarioActual = (localStorage.getItem('usuarioLogueado') || 'default').toLowerCase();
 
     // 1. DEFINICIÓN DE TIEMPO
     const ahora = new Date();
@@ -41,15 +41,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.AppState = window.AppState || {};
     window.AppState.filtrosActuales = window.AppState.filtrosActuales || {};
 
-    // 3. RECUPERAR ESTADO GLOBAL (Llave única unificada para todos los usuarios)
-    const savedState = localStorage.getItem('financiero_state');
+    // 3. RECUPERAR ESTADO EXCLUSIVO DEL USUARIO ACTIVO (Cache Primero con clave por usuario)
+    const savedState = localStorage.getItem(`financiero_state_${usuarioActual}`);
     if (savedState) {
         try {
             const parsed = JSON.parse(savedState);
             if (parsed.movimientos) window.AppState.movimientos = parsed.movimientos;
             if (parsed.filtrosActuales) window.AppState.filtrosActuales = parsed.filtrosActuales;
         } catch (e) {
-            console.error("Error al recuperar estado global:", e);
+            console.error("Error al recuperar estado:", e);
         }
     }
 
@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.AppState.filtrosActuales.fin = sessionStorage.getItem(`${usuarioActual}_filtro_analisis_fin`) || hoyStr;
     }
 
+    // Mantener compatibilidad si alguna sección sigue usando mes/año numéricos
     if (window.AppState.filtrosActuales.mes === undefined) {
         window.AppState.filtrosActuales.mes = ahora.getMonth();
     }
@@ -77,9 +78,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerDate.innerText = ahora.toLocaleDateString('es-MX', opciones).toUpperCase();
     }
 
+    // Navegación persistente por usuario
     const ultimaSeccion = localStorage.getItem(`${usuarioActual}_ultima_seccion`) || 'home';
     await showSection(ultimaSeccion);
 
+    // Activar botón nav
     const btn = document.getElementById(`nav-${ultimaSeccion}`);
     if (btn) {
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
@@ -104,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputGastoFecha.value = sessionStorage.getItem(`${usuarioActual}_filtro_gastos_inicio`);
     }
 
+    // Sincronizar selectores tradicionales
     const selectoresMes = ['in-mes', 'ex-mes', 'res-mes'];
     const selectoresAnio = ['in-año', 'ex-año', 'res-año'];
 
@@ -374,43 +378,30 @@ window.obtenerMovimientosFiltrados = function () {
     const { inicio, fin } = window.AppState?.filtrosActuales || {};
 
     if (inicio && fin) {
-        const inicioStr = inicio.split('T')[0];
-        const finStr = fin.split('T')[0];
+        const inicioTime = new Date(inicio + 'T00:00:00').getTime();
+        const finTime = new Date(fin + 'T23:59:59').getTime();
 
         return movimientos.filter(m => {
             if (!m.fecha) return false;
 
-            let fechaMovStr = '';
+            let movTime = NaN;
             let fechaStr = String(m.fecha).trim();
 
-            // Si el texto contiene las letras de los días de la semana de JS (Sun, Mon, etc.)
-            if (fechaStr.includes('GMT') || fechaStr.includes('UTC') || isNaN(Date.parse(fechaStr) === false)) {
-                const d = new Date(fechaStr);
-                if (!isNaN(d.getTime())) {
-                    // Extraemos los valores UTC para recuperar el día real antes del desfase de las 17:00 hrs
-                    const y = d.getUTCFullYear();
-                    const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
-                    const da = String(d.getUTCDate()).padStart(2, '0');
-                    fechaMovStr = `${y}-${mo}-${da}`;
-                }
-            }
-            
-            // Si viene en formato plano YYYY-MM-DD
-            if (!fechaMovStr && fechaStr.includes('-')) {
-                fechaMovStr = fechaStr.split('T')[0];
-            } 
-            // Si viene en formato DD/MM/YYYY
-            else if (!fechaMovStr && fechaStr.includes('/')) {
+            if (fechaStr.includes('-')) {
+                const soloFecha = fechaStr.split('T')[0];
+                movTime = new Date(soloFecha + 'T00:00:00').getTime();
+            } else if (fechaStr.includes('/')) {
                 const partes = fechaStr.split('/');
                 if (partes.length === 3) {
-                    fechaMovStr = `${partes[2]}-${partes[1]}-${partes[0]}`;
+                    movTime = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`).getTime();
                 }
+            } else {
+                movTime = new Date(m.fecha).getTime();
             }
 
-            if (!fechaMovStr) return false;
+            if (isNaN(movTime)) return false;
 
-            // Comparación estricta de cadenas YYYY-MM-DD
-            return fechaMovStr >= inicioStr && fechaMovStr <= finStr;
+            return movTime >= inicioTime && movTime <= finTime;
         });
     }
 
@@ -428,34 +419,13 @@ function fMXN(monto) {
     return valor.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 }
 
-window.formatearFechaMX = function (fechaInput) {
-    if (!fechaInput) return "";
-
-    let fechaObj;
-
-    // Si ya es un objeto Date o una cadena convertible
-    if (fechaInput instanceof Date) {
-        fechaObj = fechaInput;
-    } else {
-        // Intentar parsear cualquier formato de fecha que reciba
-        fechaObj = new Date(fechaInput);
-    }
-
-    // Si la fecha no es válida, devolvemos el texto original tal cual
-    if (isNaN(fechaObj.getTime())) {
-        return fechaInput;
-    }
-
-    // Extraemos año, mes y día usando métodos UTC para neutralizar el desfase GMT-0700
-    const anio = fechaObj.getUTCFullYear();
-    const mes = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
-    const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
-
-    // Retornamos el formato exacto DD/MM/YYYY
-    return `${dia}/${mes}/${anio}`;
+window.formatearFechaMX = function (fechaString) {
+    if (!fechaString) return "";
+    const fecha = new Date(fechaString.includes('T') ? fechaString : `${fechaString}T00:00:00`);
+    return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-window.guardarFiltrosHome = function () {
+window.guardarFiltrosHome = function() {
     const mes = document.getElementById('ex-mes')?.value;
     const anio = document.getElementById('ex-año')?.value;
 
@@ -463,21 +433,21 @@ window.guardarFiltrosHome = function () {
     if (anio !== undefined) sessionStorage.setItem('filtro_home_anio', anio);
 };
 
-window.guardarFiltrosIngresos = function () {
+window.guardarFiltrosIngresos = function() {
     const inicio = document.getElementById('in-fecha-inicio')?.value;
     const fin = document.getElementById('in-fecha-fin')?.value;
     if (inicio) sessionStorage.setItem('filtro_ingresos_inicio', inicio);
     if (fin) sessionStorage.setItem('filtro_ingresos_fin', fin);
 };
 
-window.guardarFiltrosGastos = function () {
+window.guardarFiltrosGastos = function() {
     const inicio = document.getElementById('ex-fecha-inicio')?.value;
     const fin = document.getElementById('ex-fecha-fin')?.value;
     if (inicio) sessionStorage.setItem('filtro_gastos_inicio', inicio);
     if (fin) sessionStorage.setItem('filtro_gastos_fin', fin);
 };
 
-window.guardarFiltrosAnalisis = function () {
+window.guardarFiltrosAnalisis = function() {
     const inicio = document.getElementById('an-fecha-inicio')?.value;
     const fin = document.getElementById('an-fecha-fin')?.value;
     if (inicio) sessionStorage.setItem('filtro_analisis_inicio', inicio);
