@@ -416,8 +416,19 @@ function fMXN(monto) {
 
 window.formatearFechaMX = function (fechaString) {
     if (!fechaString) return "";
-    const fecha = new Date(fechaString.includes('T') ? fechaString : `${fechaString}T00:00:00`);
-    return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Limpiamos la cadena para quedarnos solo con la parte de la fecha (YYYY-MM-DD)
+    const partes = fechaString.split('T')[0].split('-');
+    if (partes.length === 3) {
+        // Creamos la fecha usando UTC para que el huso horario no la mueva de día
+        const fecha = new Date(Date.UTC(partes[0], partes[1] - 1, partes[2]));
+        return fecha.toLocaleDateString('es-MX', { 
+            timeZone: 'UTC', 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        });
+    }
+    return fechaString;
 };
 
 window.guardarFiltrosHome = function () {
