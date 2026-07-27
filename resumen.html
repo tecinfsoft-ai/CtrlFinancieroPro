@@ -10,12 +10,12 @@
         <div class="flex items-center gap-3">
             <div class="flex items-center bg-white border rounded-xl px-3 py-2 shadow-sm">
                 <span class="text-[10px] font-bold text-stone-400 mr-2 uppercase">Del:</span>
-                <input type="date" id="an-fecha-inicio" onchange="refrescarVistaActual()"
+                <input type="date" id="an-fecha-inicio" onchange="guardarFiltrosAnalisis(); refrescarVistaActual();"
                     class="text-xs bg-transparent outline-none font-semibold text-stone-700">
             </div>
             <div class="flex items-center bg-white border rounded-xl px-3 py-2 shadow-sm">
                 <span class="text-[10px] font-bold text-stone-400 mr-2 uppercase">Al:</span>
-                <input type="date" id="an-fecha-fin" onchange="refrescarVistaActual()"
+                <input type="date" id="an-fecha-fin" onchange="guardarFiltrosAnalisis(); refrescarVistaActual();"
                     class="text-xs bg-transparent outline-none font-semibold text-stone-700">
             </div>
             <button onclick="generarLibroContable()" class="btn-export">📊 Generar Reporte Financiero</button>
