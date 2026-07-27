@@ -18,45 +18,19 @@ window.AppState = {
 
 // --- 1. INICIALIZACIÓN (Punto de entrada único) ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // 🛡️ CONTROL DE SESIÓN SEGURO: Si estamos en el login, no validamos sesión para evitar bucles
+    // 🛡️ CONTROL DE SESIÓN SEGURO
     if (window.location.pathname.includes('login.html')) {
         return;
     }
 
-    // 0. VALIDACIÓN DE SEGURIDAD (Control de Sesión para index.html)
     const sesionActiva = localStorage.getItem('usuarioLogueado') || localStorage.getItem('isLoggedIn');
     if (!sesionActiva) {
         window.location.replace("login.html");
         return;
     }
 
-    // 👤 OBTENER EL USUARIO ACTUAL (ej. 'kiara', 'soporte', etc.) para aislar su información
-    // Forzar a leer el usuario real de la cookie/storage que sí existe en este proyecto:
-    const usuarioActual = (localStorage.getItem('session_user') || localStorage.getItem('session_userName') || localStorage.getItem('usuarioLogueado') || 'default').toLowerCase();
-  
-    // --- 🕵️‍♂️ 2. LUEGO SE PONE EL BLOQUE DE DEPURACIÓN AQUÍ ---
-    console.log("--- INICIO DE DEPURACIÓN DE DATOS ---");
-    console.log("1. Usuario actual detectado:", usuarioActual);
-    console.log("2. Clave exacta que se buscará en localStorage:", `financiero_state_${usuarioActual}`);
-
-    const rawData = localStorage.getItem(`financiero_state_${usuarioActual}`);
-    console.log("3. ¿Encontró datos con sufijo de usuario?:", rawData ? "SÍ" : "NO");
-
-    if (!rawData) {
-        console.warn("⚠️ Ojo: No hay datos con la clave de usuario. Probando clave genérica 'financiero_state'...");
-        const fallbackData = localStorage.getItem('financiero_state');
-        console.log("4. ¿Encontró datos con la clave genérica?:", fallbackData ? "SÍ" : "NO");
-    } else {
-        try {
-            const testParsed = JSON.parse(rawData);
-            console.log("5. Objeto parseado correctamente:", testParsed);
-            console.log("6. ¿Contiene la propiedad 'movimientos'?:", testParsed.movimientos ? `SÍ (${testParsed.movimientos.length} elementos)` : "NO");
-        } catch (err) {
-            console.error("❌ Error crítico: Los datos en localStorage están corruptos:", err);
-        }
-    }
-    console.log("---------------------------------------");
-    // ----------------------------------------------------
+    // 👤 USUARIO ACTUAL SOLO PARA FILTROS Y PREFERENCIAS DE SESIÓN
+    const usuarioActual = (localStorage.getItem('session_user') || localStorage.getItem('session_userName') || 'soporte').toLowerCase();
 
     // 1. DEFINICIÓN DE TIEMPO
     const ahora = new Date();
@@ -66,15 +40,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.AppState = window.AppState || {};
     window.AppState.filtrosActuales = window.AppState.filtrosActuales || {};
 
-    // 3. RECUPERAR ESTADO EXCLUSIVO DEL USUARIO ACTIVO (Cache Primero con clave por usuario)
-    const savedState = localStorage.getItem(`financiero_state_${usuarioActual}`);
+    // 3. RECUPERAR ESTADO GLOBAL (Llave única unificada para todos los usuarios)
+    const savedState = localStorage.getItem('financiero_state');
     if (savedState) {
         try {
             const parsed = JSON.parse(savedState);
             if (parsed.movimientos) window.AppState.movimientos = parsed.movimientos;
             if (parsed.filtrosActuales) window.AppState.filtrosActuales = parsed.filtrosActuales;
         } catch (e) {
-            console.error("Error al recuperar estado:", e);
+            console.error("Error al recuperar estado global:", e);
         }
     }
 
@@ -88,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.AppState.filtrosActuales.fin = sessionStorage.getItem(`${usuarioActual}_filtro_analisis_fin`) || hoyStr;
     }
 
-    // Mantener compatibilidad si alguna sección sigue usando mes/año numéricos
     if (window.AppState.filtrosActuales.mes === undefined) {
         window.AppState.filtrosActuales.mes = ahora.getMonth();
     }
@@ -103,11 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerDate.innerText = ahora.toLocaleDateString('es-MX', opciones).toUpperCase();
     }
 
-    // Navegación persistente por usuario
     const ultimaSeccion = localStorage.getItem(`${usuarioActual}_ultima_seccion`) || 'home';
     await showSection(ultimaSeccion);
 
-    // Activar botón nav
     const btn = document.getElementById(`nav-${ultimaSeccion}`);
     if (btn) {
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
@@ -132,7 +103,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputGastoFecha.value = sessionStorage.getItem(`${usuarioActual}_filtro_gastos_inicio`);
     }
 
-    // Sincronizar selectores tradicionales
     const selectoresMes = ['in-mes', 'ex-mes', 'res-mes'];
     const selectoresAnio = ['in-año', 'ex-año', 'res-año'];
 
