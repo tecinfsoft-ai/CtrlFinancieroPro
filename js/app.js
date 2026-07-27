@@ -1,12 +1,7 @@
 // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
-const API_URL = "https://script.google.com/macros/s/AKfycbzvR903lBMnhRitzGVTj6E1XnIukpaOI7UZZM540_LX9Hdo7maew-vKKK-s_jDs7OGLvQ/exec";
-//const API_URL = "https://script.google.com/macros/s/AKfycbw7BCRmlIEhrRb_xkj57BlDi-JvAxHU94PQe8FykPsSv0LcFM9yOQpSBAxZ0Xg2hKMI/exec";
-
+const API_URL = "https://script.google.com/macros/s/AKfycbx87PyaYtEDgPqomoCuBCd59yUIXW04Sl5JioZ1hxpJAXfOwiWTbuIajMXGfEEMKbRDUg/exec";
 let editandoId = null;
 let chartH, chartR;
-// En el nivel más alto de app.js
-//let ingM = 40800;
-//let gasM = 0;
 
 // app.js
 window.AppState = {
@@ -15,7 +10,7 @@ window.AppState = {
     filtrosActuales: {
         busqueda: '',
         categoria: 'todos',
-        mes: new Date().getMonth(), // Usamos la fecha actual solo si no hay nada guardado
+        mes: new Date().getMonth(),
         año: new Date().getFullYear()
     },
     cargado: false
@@ -23,11 +18,31 @@ window.AppState = {
 
 // --- 1. INICIALIZACIÓN (Punto de entrada único) ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // 🛡️ CONTROL DE SESIÓN SEGURO: Si estamos en el login, no validamos sesión para evitar bucles
+    if (window.location.pathname.includes('login.html')) {
+        return;
+    }
+
+    // 0. VALIDACIÓN DE SEGURIDAD (Control de Sesión para index.html)
+    const sesionActiva = localStorage.getItem('usuarioLogueado') || localStorage.getItem('isLoggedIn');
+    if (!sesionActiva) {
+        window.location.replace("login.html");
+        return;
+    }
+
+    // 👤 OBTENER EL USUARIO ACTUAL (ej. 'kiara', 'soporte', etc.) para aislar su información
+    const usuarioActual = (localStorage.getItem('usuarioLogueado') || 'default').toLowerCase();
+
     // 1. DEFINICIÓN DE TIEMPO
     const ahora = new Date();
+    const hoyStr = ahora.toISOString().split('T')[0];
 
-    // 2. RECUPERAR ESTADO (Cache Primero)
-    const savedState = localStorage.getItem('financiero_state');
+    // 2. ASEGURAR QUE EL ESTADO GLOBAL EXISTA
+    window.AppState = window.AppState || {};
+    window.AppState.filtrosActuales = window.AppState.filtrosActuales || {};
+
+    // 3. RECUPERAR ESTADO EXCLUSIVO DEL USUARIO ACTIVO (Cache Primero con clave por usuario)
+    const savedState = localStorage.getItem(`financiero_state_${usuarioActual}`);
     if (savedState) {
         try {
             const parsed = JSON.parse(savedState);
@@ -38,7 +53,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 3. APLICAR VALORES POR DEFECTO (Solo si NO existen en el caché)
+    // 4. APLICAR VALORES POR DEFECTO PARA RANGOS (Aislados por usuario en sessionStorage)
+    const primerDiaMesStr = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0];
+
+    if (!window.AppState.filtrosActuales.inicio) {
+        window.AppState.filtrosActuales.inicio = sessionStorage.getItem(`${usuarioActual}_filtro_analisis_inicio`) || primerDiaMesStr;
+    }
+    if (!window.AppState.filtrosActuales.fin) {
+        window.AppState.filtrosActuales.fin = sessionStorage.getItem(`${usuarioActual}_filtro_analisis_fin`) || hoyStr;
+    }
+
+    // Mantener compatibilidad si alguna sección sigue usando mes/año numéricos
     if (window.AppState.filtrosActuales.mes === undefined) {
         window.AppState.filtrosActuales.mes = ahora.getMonth();
     }
@@ -46,16 +71,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.AppState.filtrosActuales.año = ahora.getFullYear();
     }
 
-    // 4. ACTUALIZAR UI (Encabezado y Sección)
-    // Actualizamos la fecha del header (HOLA, SOPORTE, JUEVES 16...)
-    const headerDate = document.getElementById('fecha-header'); // Asegúrate que tu HTML tenga este ID
+    // 5. ACTUALIZAR UI (Encabezado y Sección)
+    const headerDate = document.getElementById('fecha-header');
     if (headerDate) {
         const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
         headerDate.innerText = ahora.toLocaleDateString('es-MX', opciones).toUpperCase();
     }
 
-    // Navegación persistente
-    const ultimaSeccion = localStorage.getItem('ultima_seccion') || 'home';
+    // Navegación persistente por usuario
+    const ultimaSeccion = localStorage.getItem(`${usuarioActual}_ultima_seccion`) || 'home';
     await showSection(ultimaSeccion);
 
     // Activar botón nav
@@ -65,8 +89,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.classList.add('nav-active');
     }
 
-    // 5. SINCRONIZAR SELECTORES DE UI CON EL ESTADO RECUPERADO
+    // 6. SINCRONIZAR SELECTORES Y INPUTS DE FECHA EN LA UI
     const state = window.AppState;
+
+    const inputAnInicio = document.getElementById('an-fecha-inicio');
+    const inputAnFin = document.getElementById('an-fecha-fin');
+    if (inputAnInicio) inputAnInicio.value = state.filtrosActuales.inicio;
+    if (inputAnFin) inputAnFin.value = state.filtrosActuales.fin;
+
+    const inputIngresoFecha = document.getElementById('in-fecha-inicio');
+    if (inputIngresoFecha && sessionStorage.getItem(`${usuarioActual}_filtro_ingresos_inicio`)) {
+        inputIngresoFecha.value = sessionStorage.getItem(`${usuarioActual}_filtro_ingresos_inicio`);
+    }
+
+    const inputGastoFecha = document.getElementById('ex-fecha-inicio');
+    if (inputGastoFecha && sessionStorage.getItem(`${usuarioActual}_filtro_gastos_inicio`)) {
+        inputGastoFecha.value = sessionStorage.getItem(`${usuarioActual}_filtro_gastos_inicio`);
+    }
+
+    // Sincronizar selectores tradicionales
     const selectoresMes = ['in-mes', 'ex-mes', 'res-mes'];
     const selectoresAnio = ['in-año', 'ex-año', 'res-año'];
 
@@ -82,15 +123,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const inputFecha = document.getElementById('in-fecha');
     if (inputFecha) {
-        inputFecha.value = ahora.toISOString().split('T')[0];
+        inputFecha.value = hoyStr;
     }
 
-    // 6. EJECUTAR REFRESCO INICIAL (Con datos de caché)
+    // 7. EJECUTAR REFRESCO INICIAL
     refrescarVistaActual();
 
-    // 7. SINCRONIZACIÓN EN SEGUNDO PLANO (Datos reales)
+    // 8. SINCRONIZACIÓN EN SEGUNDO PLANO
     inicializarSincronizacion().then(() => {
-        // Al terminar la carga real, refrescamos una vez más para asegurar datos frescos
         refrescarVistaActual();
     });
 });
@@ -104,12 +144,12 @@ async function showSection(sectionId) {
 
     const loadId = ++currentLoadId;
 
-    // 1. UI: Feedback inmediato
+    // 1. UI: Feedback inmediato en el menú (sin pantalla de carga)
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
     const activeBtn = document.getElementById(`nav-${sectionId}`);
     if (activeBtn) activeBtn.classList.add('nav-active');
 
-    if (typeof toggleLoading === 'function') toggleLoading(true);
+    // 🛑 QUITAMOS el toggleLoading(true) de aquí para que las pestañas vuelen sin avisos molestos.
 
     try {
         // 2. Fetch del HTML de la sección
@@ -120,22 +160,33 @@ async function showSection(sectionId) {
         // 3. Control de concurrencia
         if (loadId !== currentLoadId) return;
 
-        // CORRECCIÓN: Primero inyectamos el HTML limpio en el DOM
         container.innerHTML = html;
 
-        // 4. Renderizado final y repoblación de datos
+        // 4. Renderizado final y repoblación de datos de forma local e instantánea
         requestAnimationFrame(() => {
-
-            // A. Recuperar nombre de usuario
             const userDisplayEl = document.getElementById('user-display');
             if (userDisplayEl) userDisplayEl.innerText = localStorage.getItem('session_userName') || 'Soporte';
 
-            // B. Re-iniciamos filtros generales de la UI
             if (typeof inicializarFiltros === 'function') inicializarFiltros();
             if (typeof configurarEventosFiltros === 'function') configurarEventosFiltros();
 
-            // C. Lógica específica por sección (Respetando el Estado Global)
             if (sectionId === 'home') {
+                // 1. Restaurar filtros guardados del Home (si aplica, por ejemplo, mes y año)
+                const mesGuardado = sessionStorage.getItem('filtro_home_mes');
+                const anioGuardado = sessionStorage.getItem('filtro_home_anio');
+
+                const mesHomeEl = document.getElementById('ex-mes') || document.getElementById('res-mes'); // Ajusta el ID según tu HTML
+                const anioHomeEl = document.getElementById('ex-año') || document.getElementById('res-año');
+
+                if (mesHomeEl && mesGuardado !== null) {
+                    mesHomeEl.value = mesGuardado;
+                    window.AppState.filtrosActuales.mes = parseInt(mesGuardado);
+                }
+                if (anioHomeEl && anioGuardado !== null) {
+                    anioHomeEl.value = anioGuardado;
+                    window.AppState.filtrosActuales.año = parseInt(anioGuardado);
+                }
+
                 inicializarFuncionesPorSeccion(sectionId);
                 window.ultimaCarga = { i: -1, g: -1 };
 
@@ -146,37 +197,30 @@ async function showSection(sectionId) {
                 }, 200);
             }
             else if (sectionId === 'ingresos') {
-                const inputFecha = document.getElementById('in-fecha');
-                if (inputFecha) inputFecha.value = new Date().toISOString().split('T')[0];
+                const inicioGuardado = sessionStorage.getItem('filtro_ingresos_inicio');
+                const finGuardado = sessionStorage.getItem('filtro_ingresos_fin');
+                if (inicioGuardado) { document.getElementById('in-fecha-inicio').value = inicioGuardado; window.AppState.filtrosActuales.inicio = inicioGuardado; }
+                if (finGuardado) { document.getElementById('in-fecha-fin').value = finGuardado; window.AppState.filtrosActuales.fin = finGuardado; }
 
-                const mesSel = document.getElementById('in-mes');
-                if (mesSel) {
-                    // MODIFICADO: Lee el mes del estado global, NO el mes del sistema actual
-                    mesSel.value = AppState.filtrosActuales.mes;
-                }
                 inicializarFuncionesPorSeccion(sectionId);
             }
             else if (sectionId === 'gastos') {
-                const inputFecha = document.getElementById('ex-fecha');
-                if (inputFecha) inputFecha.value = new Date().toISOString().split('T')[0];
+                const inicioGuardado = sessionStorage.getItem('filtro_gastos_inicio');
+                const finGuardado = sessionStorage.getItem('filtro_gastos_fin');
+                if (inicioGuardado) { document.getElementById('ex-fecha-inicio').value = inicioGuardado; window.AppState.filtrosActuales.inicio = inicioGuardado; }
+                if (finGuardado) { document.getElementById('ex-fecha-fin').value = finGuardado; window.AppState.filtrosActuales.fin = finGuardado; }
 
-                const mesSel = document.getElementById('ex-mes');
-                if (mesSel) {
-                    // MODIFICADO: Lee el mes del estado global, NO el mes del sistema actual
-                    mesSel.value = AppState.filtrosActuales.mes;
-                }
                 inicializarFuncionesPorSeccion(sectionId);
             }
             else if (sectionId === 'resumen' || sectionId === 'analisis') {
-                // Bloque explícito para asegurar que la sección de análisis se sincronice al entrar
-                const mesSel = document.getElementById('res-mes');
-                if (mesSel) {
-                    mesSel.value = AppState.filtrosActuales.mes;
-                }
+                const inicioGuardado = sessionStorage.getItem('filtro_analisis_inicio');
+                const finGuardado = sessionStorage.getItem('filtro_analisis_fin');
+                if (inicioGuardado) { document.getElementById('an-fecha-inicio').value = inicioGuardado; window.AppState.filtrosActuales.inicio = inicioGuardado; }
+                if (finGuardado) { document.getElementById('an-fecha-fin').value = finGuardado; window.AppState.filtrosActuales.fin = finGuardado; }
+
                 inicializarFuncionesPorSeccion(sectionId);
             }
 
-            // D. SINCRONIZACIÓN Y DIBUJO DE DATOS
             const movs = AppState.movimientos || [];
             const cats = AppState.categorias || [];
 
@@ -184,19 +228,18 @@ async function showSection(sectionId) {
             const faltanCategorias = (cats.length === 0);
 
             setTimeout(() => {
+                // Solo si de verdad faltan datos y no se han cargado, mostramos carga de forma excepcional
                 if ((faltanMovimientos || faltanCategorias) && !AppState.cargado) {
+                    if (typeof toggleLoading === 'function') toggleLoading(true);
                     inicializarSincronizacion().then(() => {
                         AppState.cargado = true;
-                        inicializarFuncionesPorSeccion(sectionId); // Llena selects de categorías con datos nuevos
+                        inicializarFuncionesPorSeccion(sectionId);
                         refrescarVistaActual();
                         if (typeof toggleLoading === 'function') toggleLoading(false);
                     });
                 } else {
-                    // 🔥 CORRECCIÓN AQUÍ: Aunque los datos ya existan en caché, 
-                    // debemos volver a llenar los selects de categorías del nuevo HTML
                     inicializarFuncionesPorSeccion(sectionId);
                     refrescarVistaActual();
-                    if (typeof toggleLoading === 'function') toggleLoading(false);
                 }
             }, 150);
         });
@@ -216,8 +259,6 @@ function inicializarFuncionesPorSeccion(sectionId) {
     if (idLimpio === 'home') {
         actualizarHome();
         actualizarFechaHeader();
-        // CAMBIO: Quita (ingM, gasM), déjalo vacío. 
-        // La función buscará los valores en window.EstadoFinanciero
         window.ultimaCarga = { i: -1, g: -1 };
         actualizarGraficoDistribucion();
     }
@@ -226,21 +267,18 @@ function inicializarFuncionesPorSeccion(sectionId) {
         actualizarListadoIndividual('ingreso', 'lista-ingresos', 'count-in');
     }
     else if (idLimpio === 'gastos') {
-        actualizarSelectsCategorias(); // Asegura que las categorías se carguen
-        actualizarListadoIndividual('gasto', 'lista-gastos', 'count-ex'); // Usa 'count-ex' como en tu HTML
+        actualizarSelectsCategorias();
+        actualizarListadoIndividual('gasto', 'lista-gastos', 'count-ex');
     }
     else if (idLimpio === 'analisis') {
         actualizarResumen();
     }
-    // 🔴 CAMBIO AQUÍ: Cambiamos 'ajustes' por 'config'
     else if (idLimpio === 'config') {
         abrirVistaAjustesInteligente();
-    } else {
     }
 }
 
 function refrescarVistaActual() {
-    // 🔥 0. ASEGURAR QUE LOS SELECTORES TENGAN UN VALOR POR DEFECTO SI ESTÁN VACÍOS
     const ahora = new Date();
     const mesActual = ahora.getMonth();
     const anioActual = ahora.getFullYear();
@@ -253,7 +291,6 @@ function refrescarVistaActual() {
         if (a && !a.value) a.value = anioActual;
     });
 
-    // 🔥 RASTREADOR DINÁMICO DE FECHA (Busca el saludo "HOLA," en el HTML)
     try {
         let contenedorFecha = document.getElementById('header-fecha') ||
             document.getElementById('fecha-actual') ||
@@ -281,18 +318,13 @@ function refrescarVistaActual() {
         console.warn("⚠️ No se pudo auto-detectar el contenedor de la fecha:", error);
     }
 
-    // ========================================================
-    // TU LÓGICA DE SECCIONES CONTINÚA AQUÍ:
-    // ========================================================
     if (typeof actualizarHome === 'function') {
         actualizarHome();
     }
 
-    // 2. Lógica específica por sección
     const activeBtn = document.querySelector('.nav-active');
     const seccionId = activeBtn ? activeBtn.id : '';
 
-    // 🔥 DETECCIÓN DIRECTA: Si los inputs de análisis están visibles en el DOM, los leemos de inmediato
     const inputInicioAnálisis = document.getElementById('an-fecha-inicio');
     const inputFinAnálisis = document.getElementById('an-fecha-fin');
 
@@ -341,8 +373,7 @@ function refrescarVistaActual() {
     });
 }
 
-window.obtenerMovimientosFiltrados = function() {
-    console.warn("¡Entró a obtenerMovimientosFiltrados!");
+window.obtenerMovimientosFiltrados = function () {
     const movimientos = window.AppState?.movimientos || [];
     const { inicio, fin } = window.AppState?.filtrosActuales || {};
 
@@ -352,7 +383,7 @@ window.obtenerMovimientosFiltrados = function() {
 
         return movimientos.filter(m => {
             if (!m.fecha) return false;
-            
+
             let movTime = NaN;
             let fechaStr = String(m.fecha).trim();
 
@@ -378,7 +409,6 @@ window.obtenerMovimientosFiltrados = function() {
 }
 
 function fMXN(monto) {
-    // Convertimos a número, si no es válido, usamos 0
     const valor = parseFloat(monto);
 
     if (isNaN(valor)) {
@@ -389,9 +419,37 @@ function fMXN(monto) {
     return valor.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 }
 
-// app.js (al principio de todo el archivo)
 window.formatearFechaMX = function (fechaString) {
     if (!fechaString) return "";
     const fecha = new Date(fechaString.includes('T') ? fechaString : `${fechaString}T00:00:00`);
     return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+window.guardarFiltrosHome = function() {
+    const mes = document.getElementById('ex-mes')?.value;
+    const anio = document.getElementById('ex-año')?.value;
+
+    if (mes !== undefined) sessionStorage.setItem('filtro_home_mes', mes);
+    if (anio !== undefined) sessionStorage.setItem('filtro_home_anio', anio);
+};
+
+window.guardarFiltrosIngresos = function() {
+    const inicio = document.getElementById('in-fecha-inicio')?.value;
+    const fin = document.getElementById('in-fecha-fin')?.value;
+    if (inicio) sessionStorage.setItem('filtro_ingresos_inicio', inicio);
+    if (fin) sessionStorage.setItem('filtro_ingresos_fin', fin);
+};
+
+window.guardarFiltrosGastos = function() {
+    const inicio = document.getElementById('ex-fecha-inicio')?.value;
+    const fin = document.getElementById('ex-fecha-fin')?.value;
+    if (inicio) sessionStorage.setItem('filtro_gastos_inicio', inicio);
+    if (fin) sessionStorage.setItem('filtro_gastos_fin', fin);
+};
+
+window.guardarFiltrosAnalisis = function() {
+    const inicio = document.getElementById('an-fecha-inicio')?.value;
+    const fin = document.getElementById('an-fecha-fin')?.value;
+    if (inicio) sessionStorage.setItem('filtro_analisis_inicio', inicio);
+    if (fin) sessionStorage.setItem('filtro_analisis_fin', fin);
 };

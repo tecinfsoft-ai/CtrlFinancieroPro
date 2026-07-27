@@ -1,6 +1,12 @@
 // --- RENDERIZADOS LOCALES ---
 function actualizarListadoIndividual(tipo, contId, countId) {
-    const todosLosMovimientos = AppState.movimientos || [];
+    // 🛡️ Extractor seguro: asegura que siempre obtengamos un arreglo plano sin importar cómo venga el estado
+    let rawMovs = AppState.movimientos || [];
+    if (!Array.isArray(rawMovs) && typeof rawMovs === 'object') {
+        rawMovs = rawMovs.movimientos || Object.values(rawMovs);
+    }
+    const todosLosMovimientos = Array.isArray(rawMovs) ? rawMovs : [];
+
     const tipoNormalizado = tipo.toLowerCase().trim();
 
     const pref = tipoNormalizado === 'ingreso' ? 'in' : 'ex';
@@ -47,7 +53,7 @@ function actualizarListadoIndividual(tipo, contId, countId) {
 
     // Renderizamos en el contenedor correcto
     const realContId = tipoNormalizado === 'ingreso' ? 'lista-ingresos' : 'lista-gastos';
-    const cont = document.getElementById(realContId) || document.getElementById(contId);
+    const cont = document.getElementById(realContId) || document.getElementById(countId);
 
     if (!cont) return;
 
@@ -144,8 +150,12 @@ function renderCategoriasConfig() {
 
 // Asegúrate de que esta variable sea global en tu archivo
 function editMode(id, active) {
+    // Si quieres que active el spinner al alternar la vista, descomenta la siguiente línea:
+    // mostrarSpinnerGlobal();
+
     const viewEl = document.getElementById(`view-${id}`);
     const editEl = document.getElementById(`edit-${id}`);
+    
     if (viewEl && editEl) {
         viewEl.classList.toggle('hidden', active);
         editEl.classList.toggle('hidden', !active);
@@ -154,6 +164,8 @@ function editMode(id, active) {
             if (input) input.focus();
         }
     }
+
+    // ocultarSpinnerGlobal();
 }
 
 async function saveEdit(id) {
@@ -188,31 +200,48 @@ async function saveEdit(id) {
                 return;
             }
 
-            // 3. Actualizar el nombre en el catálogo de categorías local si pasó la validación
-            window.AppState.categorias[index].nombre = nuevoNombre;
-            localStorage.setItem('cats_mxn', JSON.stringify(window.AppState.categorias));
+            // 🌀 1. MOSTRAR SPINNER GLOBAL ANTES DE GUARDAR Y SINCRONIZAR
+            mostrarSpinnerGlobal();
 
-            // 4. 🔥 SINCRONIZACIÓN CON GOOGLE SHEETS
             try {
+                // 3. Actualizar el nombre en el catálogo de categorías local
+                window.AppState.categorias[index].nombre = nuevoNombre;
+                localStorage.setItem('cats_mxn', JSON.stringify(window.AppState.categorias));
+                localStorage.setItem('financiero_state', JSON.stringify(window.AppState));
+
+                // 4. 🔥 SINCRONIZACIÓN CON GOOGLE SHEETS
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos máx
+
                 const response = await fetch(API_URL, {
                     method: 'POST',
+                    signal: controller.signal,
                     body: JSON.stringify({
                         action: "actualizarCategoria",
                         id: id,
                         nombre: nuevoNombre
                     })
                 });
+                clearTimeout(timeoutId);
+
                 const resultado = await response.json();
                 if (resultado.success) {
                     console.log("✅ Categoría actualizada en la nube correctamente.");
                 } else {
-                    console.error("❌ Error en la nube:", resultado.message);
+                    console.error("❌ En la nube:", resultado.message);
                 }
+
+                // ⏱️ Pausa visual fluida para que se aprecie el spinner
+                await new Promise(resolve => setTimeout(resolve, 500));
+
             } catch (error) {
-                console.error("❌ Error de red al sincronizar con Google Sheets:", error);
+                console.warn("⚠️ Aviso de red al actualizar categoría (se aplicó localmente):", error);
+            } finally {
+                // 🌀 2. OCULTAR SPINNER GLOBAL SIEMPRE (Pase lo que pase)
+                ocultarSpinnerGlobal();
             }
 
-            // 5. Restablecer la variable global de edición para que regresen los botones principales
+            // 5. Restablecer la variable global de edición
             if (typeof editandoId !== 'undefined') {
                 editandoId = null;
             }
@@ -230,13 +259,13 @@ async function saveEdit(id) {
         }
     } catch (error) {
         console.error("Error crítico en saveEdit de categorías:", error);
+        ocultarSpinnerGlobal(); // Garantía de seguridad por si ocurre un fallo inesperado
     }
 }
 
 async function actualizarCategoriaEnNube(id, nuevoNombre) {
     // Reemplaza esta URL con la URL de implementación web de tu Google Apps Script
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzvR903lBMnhRitzGVTj6E1XnIukpaOI7UZZM540_LX9Hdo7maew-vKKK-s_jDs7OGLvQ/exec";
-    //const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbw7BCRmlIEhrRb_xkj57BlDi-JvAxHU94PQe8FykPsSv0LcFM9yOQpSBAxZ0Xg2hKMI/exec";
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx87PyaYtEDgPqomoCuBCd59yUIXW04Sl5JioZ1hxpJAXfOwiWTbuIajMXGfEEMKbRDUg/exec";
 
     try {
         const respuesta = await fetch(URL_APPS_SCRIPT, {
@@ -324,6 +353,11 @@ function actualizarHome() {
         const hoyStr = ahora.toISOString().split('T')[0]; // "YYYY-MM-DD" del día de hoy
         let balG = 0, balD = 0, ingM = 0, gasM = 0;
 
+        // OBTENEMOS EL PERIODO SELECCIONADO EN LOS FILTROS
+        const filtros = window.AppState?.filtrosActuales || {};
+        const mesFiltro = filtros.mes !== undefined ? filtros.mes : ahora.getMonth();
+        const añoFiltro = filtros.año !== undefined ? filtros.año : ahora.getFullYear();
+
         datos.forEach(m => {
             const val = m.tipo === 'ingreso' ? m.monto : -m.monto;
             balG += val;
@@ -340,8 +374,8 @@ function actualizarHome() {
                 balD += val;
             }
 
-            // Verificación de mes y año actual nativo (Como funcionaba originalmente)
-            if (m.dateObj.getMonth() === ahora.getMonth() && m.dateObj.getFullYear() === ahora.getFullYear()) {
+            // VERIFICACIÓN DINÁMICA USANDO EL MES Y AÑO SELECCIONADOS
+            if (m.dateObj.getMonth() === mesFiltro && m.dateObj.getFullYear() === añoFiltro) {
                 if (m.tipo === 'ingreso') ingM += m.monto;
                 else gasM += m.monto;
             }
@@ -535,57 +569,137 @@ function actualizarFechaHeader() {
     }
 }
 
-function toggleLoading(show) {
-    const loader = document.getElementById('loading-overlay');
-    // Solo intenta cambiar el estilo si el elemento existe en el HTML actual
-    if (loader) {
-        loader.style.display = show ? 'flex' : 'none';
+window.toggleLoading = function(show) {
+    var loader = document.getElementById('loading-overlay');
+    
+    // Si por alguna razón el div no está en el HTML, lo creamos automáticamente al vuelo
+    if (!loader && show) {
+        loader = document.createElement('div');
+        loader.id = 'loading-overlay';
+        loader.style.cssText = "position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(28, 25, 23, 0.7); backdrop-filter: blur(4px);";
+        loader.innerHTML = `
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-100 mb-4" style="border-top: 2px solid transparent; border-left: 2px solid transparent; animation: spin 1s linear infinite;"></div>
+            <p style="color: #f5f5f4; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em;">Procesando...</p>
+        `;
+        document.body.appendChild(loader);
     }
-}
+
+    if (loader) {
+        if (show) {
+            loader.style.display = 'flex';
+        } else {
+            loader.style.display = 'none';
+        }
+    }
+};
 
 function inicializarFiltros() {
     const hoy = new Date();
     const añoActual = hoy.getFullYear();
-    const mesActual = String(hoy.getMonth() + 1).padStart(2, '0');
+    const mesActualSistema = hoy.getMonth(); 
+    const mesStr = String(mesActualSistema + 1).padStart(2, '0');
     const diaActual = String(hoy.getDate()).padStart(2, '0');
 
-    const primerDiaMes = `${añoActual}-${mesActual}-01`;
-    const fechaHoySistema = `${añoActual}-${mesActual}-${diaActual}`;
+    const primerDiaMes = `${añoActual}-${mesStr}-01`;
+    const fechaHoySistema = `${añoActual}-${mesStr}-${diaActual}`;
 
-    // 🔥 INCLUIMOS 'an' AQUÍ PARA QUE LOS DETECTE DE INMEDIATO
+    // 1. Manejo de inputs de fecha usando sessionStorage para aislar por pestaña/sesión
     const prefijos = ['in', 'ex', 'res', 'an'];
-
     prefijos.forEach(pref => {
         const inputInicio = document.getElementById(`${pref}-fecha-inicio`);
         const inputFin = document.getElementById(`${pref}-fecha-fin`);
 
         if (inputInicio && inputFin) {
-            if (!inputInicio.value) inputInicio.value = primerDiaMes;
-            if (!inputFin.value) inputFin.value = fechaHoySistema;
+            // Cargar desde sessionStorage de la sesión actual, o usar el valor por defecto del sistema
+            const sesionInicio = sessionStorage.getItem(`${pref}_filtro_inicio`) || primerDiaMes;
+            const sesionFin = sessionStorage.getItem(`${pref}_filtro_fin`) || fechaHoySistema;
+
+            inputInicio.value = sesionInicio;
+            inputFin.value = sesionFin;
         }
     });
 
-    if (!AppState.filtrosActuales) AppState.filtrosActuales = {};
-    if (!AppState.filtrosActuales.inicio) AppState.filtrosActuales.inicio = primerDiaMes;
-    if (!AppState.filtrosActuales.fin) AppState.filtrosActuales.fin = fechaHoySistema;
+    // Inputs individuales de captura
+    const inputFechaIngreso = document.getElementById('in-fecha');
+    if (inputFechaIngreso && !inputFechaIngreso.value) {
+        inputFechaIngreso.value = fechaHoySistema;
+    }
 
-    // --- ESCUCHADOR GENERAL PARA TODOS LOS INPUTS DE FECHA ---
+    const inputFechaGasto = document.getElementById('ex-fecha');
+    if (inputFechaGasto && !inputFechaGasto.value) {
+        inputFechaGasto.value = fechaHoySistema;
+    }
+
+    if (!AppState.filtrosActuales) AppState.filtrosActuales = {};
+    AppState.filtrosActuales.inicio = sessionStorage.getItem('an_filtro_inicio') || primerDiaMes;
+    AppState.filtrosActuales.fin = sessionStorage.getItem('an_filtro_fin') || fechaHoySistema;
+    AppState.filtrosActuales.mes = mesActualSistema;
+    AppState.filtrosActuales.año = añoActual;
+
+    // 2. Sincronización de selectores de Mes y Año
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const idsAnio = ['in-año', 'ex-año', 'res-año'];
+    const idsMes = ['in-mes', 'ex-mes', 'res-mes'];
+
+    [idsMes, idsAnio].forEach((list, idx) => {
+        list.forEach(id => {
+            const sel = document.getElementById(id);
+            if (sel) {
+                sel.innerHTML = '';
+                if (idx === 0) {
+                    meses.forEach((m, i) => {
+                        let opt = document.createElement('option');
+                        opt.value = i;
+                        opt.innerHTML = m;
+                        sel.appendChild(opt);
+                    });
+                    sel.value = mesActualSistema; 
+                } else {
+                    for (let i = añoActual; i >= añoActual - 4; i--) {
+                        let opt = document.createElement('option');
+                        opt.value = i;
+                        opt.innerHTML = i;
+                        sel.appendChild(opt);
+                    }
+                    sel.value = añoActual; 
+                }
+
+                if (!sel.dataset.escuchadorActivo) {
+                    sel.dataset.escuchadorActivo = "true";
+                    sel.addEventListener('change', () => {
+                        if (!AppState.filtrosActuales) AppState.filtrosActuales = {};
+
+                        if (sel.id.includes('mes')) {
+                            AppState.filtrosActuales.mes = parseInt(sel.value, 10);
+                        } else if (sel.id.includes('año')) {
+                            AppState.filtrosActuales.año = parseInt(sel.value, 10);
+                        }
+
+                        if (typeof refrescarVistaActual === 'function') {
+                            refrescarVistaActual();
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+    // 3. Escuchador para guardar en sessionStorage (aislado por sesión activa)
     document.querySelectorAll('input[type="date"]').forEach(input => {
-        // Evitamos duplicar escuchadores si la función se ejecuta varias veces
         if (input.dataset.escuchadorActivo) return;
         input.dataset.escuchadorActivo = "true";
 
         input.addEventListener('change', () => {
             if (!AppState.filtrosActuales) AppState.filtrosActuales = {};
 
-            // Sincronizamos el valor con AppState sin importar si es 'in', 'ex' o 'an'
             if (input.id.includes('inicio')) {
                 AppState.filtrosActuales.inicio = input.value;
+                sessionStorage.setItem('an_filtro_inicio', input.value);
             } else if (input.id.includes('fin')) {
                 AppState.filtrosActuales.fin = input.value;
+                sessionStorage.setItem('an_filtro_fin', input.value);
             }
 
-            // Refrescamos la vista activa
             if (typeof refrescarVistaActual === 'function') {
                 refrescarVistaActual();
             } else if (typeof actualizarResumen === 'function') {
@@ -595,11 +709,57 @@ function inicializarFiltros() {
     });
 }
 
+function guardarFiltrosIngresos() {
+    const inicio = document.getElementById('in-fecha-inicio')?.value;
+    const fin = document.getElementById('in-fecha-fin')?.value;
+
+    if (inicio) sessionStorage.setItem('filtro_ingresos_inicio', inicio);
+    if (fin) sessionStorage.setItem('filtro_ingresos_fin', fin);
+}
+
+function restaurarFiltrosIngresos() {
+    const inicioGuardado = sessionStorage.getItem('filtro_ingresos_inicio');
+    const finGuardado = sessionStorage.getItem('filtro_ingresos_fin');
+
+    const inputInicio = document.getElementById('in-fecha-inicio');
+    const inputFin = document.getElementById('in-fecha-fin');
+
+    if (inputInicio && inicioGuardado) {
+        inputInicio.value = inicioGuardado;
+    }
+    if (inputFin && finGuardado) {
+        inputFin.value = finGuardado;
+    }
+}
+
 function formatCurrency(input, hiddenId) {
+    // 1. Guardar la posición actual del cursor antes de modificar el valor
+    let cursorPosition = input.selectionStart;
+    let oldLength = input.value.length;
+
+    // 2. Extraer solo los números
     let value = input.value.replace(/\D/g, "");
     let numericValue = value ? parseFloat(value) / 100 : 0;
-    document.getElementById(hiddenId).value = numericValue;
-    input.value = numericValue.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) + " MXN";
+    
+    // 3. Actualizar el input oculto
+    const hiddenInput = document.getElementById(hiddenId);
+    if (hiddenInput) {
+        hiddenInput.value = numericValue;
+    }
+
+    // 4. Aplicar el formato de moneda al input visible
+    let formattedValue = numericValue.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) + " MXN";
+    input.value = formattedValue;
+
+    // 5. Restaurar la posición del cursor de forma inteligente
+    let newLength = input.value.length;
+    cursorPosition = cursorPosition + (newLength - oldLength);
+    
+    // Asegurar que el cursor no se salga de los límites
+    if (cursorPosition < 0) cursorPosition = 0;
+    if (cursorPosition > input.value.length) cursorPosition = input.value.length;
+    
+    input.setSelectionRange(cursorPosition, cursorPosition);
 }
 
 // Función de seguridad para actualizar elementos
