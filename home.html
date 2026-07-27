@@ -1,23 +1,41 @@
 <section id="sec-home">
+    <!-- 📅 FILTRO DE PERIODO PARA EL HOME -->
+    <div class="flex items-center justify-end gap-3 mb-8">
+        <div class="flex items-center gap-2">
+            <span class="text-xs uppercase tracking-wider opacity-60 font-bold text-[#8C7E6A]">Periodo del
+                Resumen:</span>
+        </div>
+        <div class="flex gap-2">
+            <div class="toolbar-group flex gap-2">
+                <select id="ex-mes" onchange="guardarFiltrosHome(); refrescarVistaActual();"
+                    class="bg-white px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm border-none"></select>
+                <select id="ex-año" onchange="guardarFiltrosHome(); refrescarVistaActual();"
+                    class="bg-white px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm border-none"></select>
+            </div>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE RESUMEN -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
         <div class="balance-highlight p-6 rounded-xl-custom soft-shadow border border-[#E5DDD3]">
             <span class="text-[10px] uppercase tracking-wider opacity-60 font-bold">Patrimonio Total</span>
             <h2 id="balance-general" class="text-2xl font-bold mt-1 text-[#8C7E6A]">$0.00</h2>
         </div>
-        <div class="bg-white p-6 rounded-xl-custom soft-shadow"><span
-                class="text-[10px] uppercase tracking-wider opacity-60 font-bold italic">Hoy</span>
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow">
+            <span class="text-[10px] uppercase tracking-wider opacity-60 font-bold italic">Hoy</span>
             <h2 id="balance-dia" class="text-2xl font-bold mt-1 text-stone-600">$0.00</h2>
         </div>
-        <div class="bg-white p-6 rounded-xl-custom soft-shadow"><span
-                class="text-[10px] uppercase tracking-wider opacity-60 font-bold">Ingresos Mes</span>
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow">
+            <span class="text-[10px] uppercase tracking-wider opacity-60 font-bold">Ingresos Mes</span>
             <h2 id="home-ingresos" class="text-2xl font-bold mt-1 text-stone-500">$0.00</h2>
         </div>
-        <div class="bg-white p-6 rounded-xl-custom soft-shadow"><span
-                class="text-[10px] uppercase tracking-wider opacity-60 text-rose-300 font-bold">Gastos
-                Mes</span>
+        <div class="bg-white p-6 rounded-xl-custom soft-shadow">
+            <span class="text-[10px] uppercase tracking-wider opacity-60 text-rose-300 font-bold">Gastos Mes</span>
             <h2 id="home-gastos" class="text-2xl font-bold mt-1">$0.00</h2>
         </div>
     </div>
+
+    <!-- GRÁFICO Y MOVIMIENTOS RECIENTES -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div class="bg-white p-8 rounded-xl-custom soft-shadow text-center">
             <h3 class="text-lg font-semibold mb-6 italic">Distribución Mensual</h3>
