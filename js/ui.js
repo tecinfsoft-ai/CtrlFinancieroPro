@@ -264,11 +264,8 @@ async function saveEdit(id) {
 }
 
 async function actualizarCategoriaEnNube(id, nuevoNombre) {
-    // Reemplaza esta URL con la URL de implementación web de tu Google Apps Script
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx87PyaYtEDgPqomoCuBCd59yUIXW04Sl5JioZ1hxpJAXfOwiWTbuIajMXGfEEMKbRDUg/exec";
-
     try {
-        const respuesta = await fetch(URL_APPS_SCRIPT, {
+        const respuesta = await fetch(API_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "actualizarCategoria",
@@ -288,6 +285,7 @@ async function actualizarCategoriaEnNube(id, nuevoNombre) {
         console.error("❌ Error de red al intentar actualizar en Google Sheets:", error);
     }
 }
+
 // Variables globales seguras para los gráficos
 window.chartH = window.chartH || null;
 window.chartR = window.chartR || null;
@@ -733,29 +731,37 @@ function restaurarFiltrosIngresos() {
 }
 
 function formatCurrency(input, hiddenId) {
-    // 1. Guardar la posición actual del cursor antes de modificar el valor
+    // 1. Guardar la posición actual del cursor antes de cualquier cambio
     let cursorPosition = input.selectionStart;
     let oldLength = input.value.length;
 
-    // 2. Extraer solo los números
-    let value = input.value.replace(/\D/g, "");
-    let numericValue = value ? parseFloat(value) / 100 : 0;
+    // 2. Extraer estrictamente solo los dígitos numéricos
+    let rawValue = input.value.replace(/\D/g, "");
     
+    let numericValue = 0;
+    if (rawValue) {
+        numericValue = parseInt(rawValue, 10) / 100;
+    }
+
     // 3. Actualizar el input oculto
     const hiddenInput = document.getElementById(hiddenId);
     if (hiddenInput) {
         hiddenInput.value = numericValue;
     }
 
-    // 4. Aplicar el formato de moneda al input visible
-    let formattedValue = numericValue.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) + " MXN";
+    // 4. Aplicar el formato visual estándar (SIN el texto "MXN" al final)
+    let formattedValue = numericValue.toLocaleString('es-MX', { 
+        style: 'currency', 
+        currency: 'MXN' 
+    });
+    
     input.value = formattedValue;
 
-    // 5. Restaurar la posición del cursor de forma inteligente
+    // 5. Ajuste inteligente del cursor para que no brinque al final al borrar
     let newLength = input.value.length;
     cursorPosition = cursorPosition + (newLength - oldLength);
     
-    // Asegurar que el cursor no se salga de los límites
+    // Evitar que rebase los límites
     if (cursorPosition < 0) cursorPosition = 0;
     if (cursorPosition > input.value.length) cursorPosition = input.value.length;
     

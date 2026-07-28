@@ -81,15 +81,22 @@ async function guardarRegistro(tipo) {
     const comprobanteTicket = await archivoABase64(fileTicket);
     const comprobantePdf = await archivoABase64(filePdf);
     const comprobanteXml = await archivoABase64(fileXml);
+    const usuarioActual = (localStorage.getItem('session_userName') || localStorage.getItem('session_user') || '').toLowerCase();
 
     const idMovi = window.editandoId || Date.now();
+
+    // 🛠️ Limpiamos el monto para garantizar que sea un número puro antes de enviarlo
+    const montoCrudo = monto !== undefined && monto !== null ? monto.toString() : "0";
+    const montoPuro = parseFloat(montoCrudo.replace(/[^0-9.]/g, '')) || 0;
+
     const nuevaData = {
         id: idMovi,
         tipo,
+        userName: usuarioActual,
         fecha: document.getElementById(`${pref}-fecha`).value,
         cat: selectCat.value.trim().toUpperCase(),
         desc: textoDesc || 'SIN NOMBRE',
-        monto,
+        monto: montoPuro, // 👈 Aquí mandamos el número limpio
         ticket: comprobanteTicket,
         facturaPdf: comprobantePdf,
         facturaXml: comprobanteXml
@@ -124,7 +131,7 @@ async function guardarRegistro(tipo) {
         if (document.getElementById('file-ticket')) document.getElementById('file-ticket').value = '';
         if (document.getElementById('file-pdf')) document.getElementById('file-pdf').value = '';
         if (document.getElementById('file-xml')) document.getElementById('file-xml').value = '';
-        
+
     } catch (error) {
         console.error("Error:", error);
         AppState.movimientos = JSON.parse(estadoAnterior);
@@ -144,7 +151,16 @@ function limpiarFormulario(tipo) {
 
     campos.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.value = (id.includes('hidden')) ? 0 : "";
+        if (el) {
+            if (id.includes('hidden')) {
+                el.value = 0;
+            } else if (id.includes('categoria')) {
+                // Seleccionamos la opción por defecto (el primer elemento o valor vacío)
+                el.selectedIndex = 0;
+            } else {
+                el.value = "";
+            }
+        }
     });
 
     window.editandoId = null;
@@ -305,7 +321,7 @@ async function eliminarCategoria(id) {
             })
         });
         clearTimeout(timeoutId);
-        
+
         await response.json();
 
         // ⏱️ Pausa visual fluida para que se aprecie el spinner
@@ -351,21 +367,36 @@ function prepararEdicion(id, tipo) {
     }, 200);
 
     document.getElementById(`${pref}-desc`).value = mov.desc;
+    
     const mask = document.getElementById(`${pref}-monto-mask`);
     const hidden = document.getElementById(`${pref}-monto-hidden`);
 
     if (mask && hidden) {
-        hidden.value = mov.monto;
-        mask.value = Number(mov.monto).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+        let montoLimpio = 0;
+        if (mov.monto !== undefined && mov.monto !== null) {
+            let limpioStr = mov.monto.toString().replace(/[^0-9.]/g, '');
+            montoLimpio = parseFloat(limpioStr) || 0;
+        }
+
+        hidden.value = montoLimpio;
+        mask.value = montoLimpio.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
     }
 
-    const btn1 = document.querySelector(`#sec-${tipo}s button[onclick^="guardarRegistro"]`);
+    // 🛠️ CONFIGURACIÓN DEL BOTÓN PRINCIPAL
+    const btn1 = document.querySelector(`#sec-${tipo}s button[onclick^="guardarRegistro"]`) || document.getElementById(`btn-guardar-${tipo}`);
     if (btn1) {
         btn1.innerText = "ACTUALIZAR REGISTRO";
         btn1.classList.add('ring-4', 'ring-amber-100', 'bg-amber-600');
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 🛠️ MOSTRAR EL BOTÓN DE CANCELAR (FORZANDO VISIBILIDAD CORRECTAMENTE)
+    const btnCancelar = document.getElementById(`btn-cancelar-${tipo}`);
+    if (btnCancelar) {
+        btnCancelar.style.display = 'block'; // Fuerza que se muestre quitando el ocultamiento en línea
+        btnCancelar.classList.remove('hidden'); // Por si usa clase hidden de Tailwind
+    }
+
+    //window.scrollTo({ top: 0, behavior: 'smooth' });
 
     const camposArchivos = [
         { url: mov.ticket, textoId: 'textoTicketActual' },
@@ -390,6 +421,28 @@ function prepararEdicion(id, tipo) {
             }
         }
     });
+}
+
+function cancelarEdicion(tipo) {
+    // 1. Limpiamos el ID que estaba en edición
+    window.editandoId = null;
+    const pref = tipo === 'ingreso' ? 'in' : 'ex';
+
+    // 2. Llamamos a tu función para restablecer todos los inputs y archivos
+    limpiarFormulario(tipo);
+
+    // 3. Restaurar el texto del botón principal a "Guardar Registro"
+    const btn1 = document.querySelector(`#sec-${tipo}s button[onclick^="guardarRegistro"]`);
+    if (btn1) {
+        btn1.innerText = "GUARDAR REGISTRO";
+        btn1.classList.remove('ring-4', 'ring-amber-100', 'bg-amber-600');
+    }
+
+    // 4. Ocultar el botón de cancelar
+    const btnCancelar = document.getElementById(`btn-cancelar-${tipo}`);
+    if (btnCancelar) {
+        btnCancelar.style.display = 'none';
+    }
 }
 
 // ==========================================
@@ -566,7 +619,7 @@ async function exportarFiltradoXLSX(tipo) {
         filaFil = Encabezado(ws, "DETALLE DE " + tipo.toUpperCase(), filaFil);
         filaFil = Encabezado(ws, periodoTexto, filaFil);
         filaFil = Encabezado(ws, "GENERADO EL " + ahora.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), filaFil);
-        filaFil++; 
+        filaFil++;
 
         if (typeof llenarTablaDetalle === 'function') {
             llenarTablaDetalle(ws, filtrados, filaFil);
@@ -583,7 +636,7 @@ async function exportarFiltradoXLSX(tipo) {
     }
 }
 
-window.generarLibroContable = async function() {
+window.generarLibroContable = async function () {
     console.log("📥 Iniciando diagnóstico de fechas para Reporte Financiero...");
 
     const fechaInicioStr = document.getElementById('an-fecha-inicio')?.value || window.AppState?.filtrosActuales?.inicio;
@@ -861,11 +914,11 @@ function UtiNeta(ws, tit, monto, utilidad, fila) {
     return fila + 1;
 }
 
-async function descargarArchivo(workbook, nombre) { 
-    const buffer = await workbook.xlsx.writeBuffer(); 
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); 
-    const link = document.createElement('a'); 
-    link.href = URL.createObjectURL(blob); 
-    link.download = `${nombre}.xlsx`; 
-    link.click(); 
+async function descargarArchivo(workbook, nombre) {
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${nombre}.xlsx`;
+    link.click();
 }
