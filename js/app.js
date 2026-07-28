@@ -1,7 +1,8 @@
 // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
-const API_URL = "https://script.google.com/macros/s/AKfycbzvR903lBMnhRitzGVTj6E1XnIukpaOI7UZZM540_LX9Hdo7maew-vKKK-s_jDs7OGLvQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwRDYP0H0vHWFS5ifehCVAIxoeNV28OgnV8BbzCozgSmuOOZCCU5qn9nut9538k7V4g/exec";
 let editandoId = null;
 let chartH, chartR;
+
 
 // app.js
 window.AppState = {
