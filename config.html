@@ -1,5 +1,6 @@
 <!-- SPINNER GLOBAL IDÉNTICO AL DE TU IMAGEN -->
-<div id="spinner-global" class="hidden fixed inset-0 z-50 items-center justify-center" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);">
+<div id="spinner-global" class="hidden fixed inset-0 z-50 items-center justify-center"
+    style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);">
     <div class="flex flex-col items-center gap-3 p-4">
         <!-- Círculo de carga limpio -->
         <div class="animate-spin rounded-full h-10 w-10 border-2 border-white/20 border-t-white"></div>
@@ -7,10 +8,14 @@
         <span class="text-[11px] font-bold uppercase tracking-widest text-white">PROCESANDO...</span>
     </div>
 </div>
-<section id="sec-config">
-    <div class="max-w-2xl mx-auto space-y-6">
+<section id="sec-config" class="-mt-20">
+    <div class="max-w-2xl mx-auto space-y-6" mt-20>
         <div class="bg-white p-6 md:p-8 rounded-xl-custom soft-shadow">
-            <h2 class="text-xl font-semibold mb-6 italic text-stone-800">Categorías</h2>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-stone-800">NUEVA CATEGORÍAS</h2>
+                </div>
+            </div>
             <div class="flex flex-col md:flex-row gap-2 mb-8">
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre"
                     class="flex-1 p-3 rounded-lg bg-gray-50 outline-none text-sm border">

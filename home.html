@@ -1,22 +1,29 @@
-<section id="sec-home">
+<section id="sec-home" class="-mt-20">
     <!-- 📅 FILTRO DE PERIODO PARA EL HOME -->
-    <div class="flex items-center justify-end gap-3 mb-8">
-        <div class="flex items-center gap-2">
-            <span class="text-xs uppercase tracking-wider opacity-60 font-bold text-[#8C7E6A]">Periodo del
-                Resumen:</span>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h2 class="text-2xl font-bold text-stone-800">RESUMEN AL DÍA</h2>
         </div>
-        <div class="flex gap-2">
-            <div class="toolbar-group flex gap-2">
-                <select id="ex-mes" onchange="guardarFiltrosHome(); refrescarVistaActual();"
-                    class="bg-white px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm border-none"></select>
-                <select id="ex-año" onchange="guardarFiltrosHome(); refrescarVistaActual();"
-                    class="bg-white px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm border-none"></select>
+
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+
+            <div class="flex items-center gap-2">
+                <span class="text-xs uppercase tracking-wider opacity-60 font-bold text-[#8C7E6A]">Periodo del
+                    Resumen:</span>
+            </div>
+            <div class="flex gap-2">
+                <div class="toolbar-group flex gap-2">
+                    <select id="ex-mes" onchange="guardarFiltrosHome(); refrescarVistaActual();"
+                        class="bg-white px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm border-none"></select>
+                    <select id="ex-año" onchange="guardarFiltrosHome(); refrescarVistaActual();"
+                        class="bg-white px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm border-none"></select>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- TARJETAS DE RESUMEN -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-20 mb-20">
         <div class="balance-highlight p-6 rounded-xl-custom soft-shadow border border-[#E5DDD3]">
             <span class="text-[10px] uppercase tracking-wider opacity-60 font-bold">Patrimonio Total</span>
             <h2 id="balance-general" class="text-2xl font-bold mt-1 text-[#8C7E6A]">$0.00</h2>
