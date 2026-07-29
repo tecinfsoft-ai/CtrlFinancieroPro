@@ -170,7 +170,7 @@ async function showSection(sectionId) {
         // 4. Renderizado final y repoblación de datos de forma local e instantánea
         requestAnimationFrame(() => {
             const userDisplayEl = document.getElementById('user-display');
-            if (userDisplayEl) userDisplayEl.innerText = localStorage.getItem('usuarioLogueado') || localStorage.getItem('session_userName') || 'Soporte';
+            if (userDisplayEl) userDisplayEl.innerText = localStorage.getItem('usuarioLogueado') || localStorage.getItem('session_user') || 'Soporte';
 
             if (typeof inicializarFiltros === 'function') inicializarFiltros();
             if (typeof configurarEventosFiltros === 'function') configurarEventosFiltros();
