@@ -367,7 +367,7 @@ function prepararEdicion(id, tipo) {
     }, 200);
 
     document.getElementById(`${pref}-desc`).value = mov.desc;
-    
+
     const mask = document.getElementById(`${pref}-monto-mask`);
     const hidden = document.getElementById(`${pref}-monto-hidden`);
 
@@ -605,16 +605,30 @@ async function exportarFiltradoXLSX(tipo) {
             return;
         }
 
-        const inputsFecha = document.querySelectorAll('input[type="date"]');
-        const txtInicio = inputsFecha.length > 0 ? inputsFecha[0].value : '';
-        const txtFin = inputsFecha.length > 1 ? inputsFecha[1].value : '';
+        let fechaInicioStr;
+        let fechaFinStr;
+
+        if (tipo === 'gasto') {
+            fechaInicioStr = document.getElementById('ex-fecha-inicio')?.value || window.AppState?.filtrosActuales?.inicio;
+            fechaFinStr = document.getElementById('ex-fecha-fin')?.value || window.AppState?.filtrosActuales?.fin;
+        } else {
+            fechaInicioStr = document.getElementById('in-fecha-inicio')?.value || window.AppState?.filtrosActuales?.inicio;
+            fechaFinStr = document.getElementById('in-fecha-fin')?.value || window.AppState?.filtrosActuales?.fin;
+        }
+
+        const fechaInicio = new Date(fechaInicioStr + 'T00:00:00');
+        const fechaFin = new Date(fechaFinStr + 'T23:59:59');
 
         const ahora = new Date();
         const workbook = new ExcelJS.Workbook();
         const ws = workbook.addWorksheet('Detalle');
-        let filaFil = 1;
+        let filaFil = 1; // Usamos tu variable original para llevar el control de filas
 
-        const periodoTexto = (txtInicio && txtFin) ? `DEL ${txtInicio} AL ${txtFin}` : `PERIODO ACTUAL`;
+        const periodoTexto = `DEL ${fechaInicio.toLocaleDateString('es-MX', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }).toUpperCase()} AL ${fechaFin.toLocaleDateString('es-MX', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }).toUpperCase()}`;
 
         filaFil = Encabezado(ws, "DETALLE DE " + tipo.toUpperCase(), filaFil);
         filaFil = Encabezado(ws, periodoTexto, filaFil);
@@ -626,7 +640,8 @@ async function exportarFiltradoXLSX(tipo) {
         }
 
         if (typeof descargarArchivo === 'function') {
-            await descargarArchivo(workbook, "Detalle_" + tipo + "_" + (txtInicio || 'reporte') + "_al_" + (txtFin || 'fecha'));
+            // CORREGIDO: Se usan fechaInicioStr y fechaFinStr en lugar de txtInicio/txtFin
+            await descargarArchivo(workbook, "Detalle_" + tipo + "_" + (fechaInicioStr || 'reporte') + "_al_" + (fechaFinStr || 'fecha'));
         }
 
     } catch (error) {
@@ -685,7 +700,11 @@ window.generarLibroContable = async function () {
     const fechaReporteFormateada = ahora.toLocaleDateString('es-MX', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     }).toUpperCase();
-    const periodoTexto = `DEL ${fechaInicio.toLocaleDateString('es-MX')} AL ${fechaFin.toLocaleDateString('es-MX')}`;
+    const periodoTexto = `DEL ${fechaInicio.toLocaleDateString('es-MX', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    }).toUpperCase()} AL ${fechaFin.toLocaleDateString('es-MX', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    }).toUpperCase()}`;
 
     // --- PESTAÑA 1 ---
     const sheetER = workbook.addWorksheet('Estado de Resultados');
@@ -787,6 +806,8 @@ function llenarTablaDetalle(ws, datos, filaLle) {
     head.commit();
     filaLle++;
 
+    let totalMonto = 0; // Acumulador para el total
+
     datos.forEach((d, i) => {
         const r = ws.getRow(filaLle);
         let fechaFormateada = d.fecha;
@@ -801,6 +822,8 @@ function llenarTablaDetalle(ws, datos, filaLle) {
         }
 
         r.values = [fechaFormateada, d.cat, d.desc, d.monto];
+        totalMonto += Number(d.monto) || 0; // Sumamos al total
+
         const colorFila = (i % 2 === 0) ? 'FFF2ECE5' : 'FFB9AB97';
 
         r.eachCell({ includeEmpty: true }, (cell, colNumber) => {
@@ -818,6 +841,28 @@ function llenarTablaDetalle(ws, datos, filaLle) {
         r.commit();
         filaLle++;
     });
+
+    // --- FILA DE TOTALES ---
+    const filaTotal = ws.getRow(filaLle);
+    filaTotal.values = ['', '', 'TOTAL:', totalMonto];
+
+    filaTotal.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true, size: 12, color: { argb: 'FF45423E' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6DFD5' } }; // Un tono ligeramente distinto para destacar
+        cell.border = { top: { style: 'thin', color: { argb: 'FF7E705B' } }, bottom: { style: 'double', color: { argb: 'FF7E705B' } } };
+
+        if (colNumber === 3) {
+            cell.alignment = { horizontal: 'right' };
+        }
+        if (colNumber === 4) {
+            cell.numFmt = '"$"#,##0.00';
+            cell.alignment = { horizontal: 'right' };
+        }
+    });
+
+    filaTotal.commit();
+    filaLle++;
+    // -----------------------
 
     ws.columns.forEach(c => c.width = 22);
 }
